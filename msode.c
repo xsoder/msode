@@ -11,24 +11,9 @@ typedef struct {
     const char* title;
 } Win;
 
-typedef struct {
-    Image image;
-    char* name;
-} Button;
-
 void draw_button(Rectangle rect, int width, int height, Color color, const char *text)
 {
     DrawRectangle(rect.x, rect.y, width, height, color);
-}
-
-void init_buttons(Button *button){
-    #ifdef __linux__
-    strcat(button->name,"assets/");
-    #endif
-    #ifdef _WIN64
-    strcat(button->name, "assets\\");
-    #endif
-    LoadImage(button->name);
 }
 
 int main(void)
