@@ -68,7 +68,7 @@ int main(void)
     Sound sound = LoadSound("test.ogg");
     SetTargetFPS(60);
     // TODO: Make it load system font
-    Font font = LoadFont("/home/xsoder/.fonts/Iosevka-Regular.ttf");
+    Font font = LoadFont("deps/font/Iosevka-Regular.ttf");
 
     PlaySound(sound);
 
