@@ -29,10 +29,6 @@ const char *tiny_dir = "tiny_file_dialog";
 const char *font_dir = "font";
 const char *font_zip = "PkgTTF-Iosevka-33.2.7.zip";
 
-size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream)
-{
-    return fwrite(ptr, size, nmemb, stream);
-}
 int download(const char *url, const char *filename)
 {
     CURL *curl = curl_easy_init();
@@ -46,7 +42,7 @@ int download(const char *url, const char *filename)
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,(size_t (*)(void *, size_t, size_t, void *))fwrite);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "curl/7.79.1");
 
