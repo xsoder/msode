@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FONT_SIZE 12
+#define FONT_SIZE 20
 
 typedef struct {
     int width;
@@ -11,9 +11,33 @@ typedef struct {
     const char* title;
 } Win;
 
-void draw_button(Rectangle rect, int width, int height, Color color, const char *text)
+typedef struct {
+    int width;
+    int height;
+    Color text_color;
+    Color fg_color;
+    Vector2 text_pos;
+    float font_size;
+    float spacing;
+    
+} Button;
+
+void draw_button(Font font, Rectangle *rect, Button *button, const char *text)
 {
-    DrawRectangle(rect.x, rect.y, width, height, color);
+    DrawRectangle(rect->x, rect->y, button->width, button->height, button->fg_color);
+    DrawTextEx(font, text, button->text_pos, button->font_size, button->spacing, button->text_color);
+}
+
+void init_button(Button *button,int width, int height,
+     Color fg_color, Color text_color, Vector2 text_pos, float font_size, float spacing)
+{
+    button->width = width;
+    button->height = height;
+    button->text_color = text_color;
+    button->fg_color = fg_color;
+    button->text_pos = text_pos;
+    button->font_size = font_size;
+    button->spacing = spacing;
 }
 
 int main(void)
@@ -28,17 +52,23 @@ int main(void)
     int width = win.width;
     int height = 20;
 
+    Button button;
+
     Rectangle rec;
     rec.x = 0;
     rec.y = 0;
     rec.width = 40;
-    rec.height = height;
+    rec.height = 50;
+
 
     InitWindow(win.width, win.height, win.title);
     InitAudioDevice();
 
+    // TODO: Tiny file dialog Integration
     Sound sound = LoadSound("test.ogg");
     SetTargetFPS(60);
+    // TODO: Make it load system font
+    Font font = LoadFont("/home/xsoder/.fonts/Iosevka-Regular.ttf");
 
     PlaySound(sound);
 
@@ -57,9 +87,15 @@ int main(void)
         rect.x = 0;
         rect.y = 0;
         int button_width = 50;
-        int button_height = 20;
+        int button_height = 50;
+        Vector2 text_pos;
+        text_pos.x = 3;
+        text_pos.y = 3;
+        
         DrawRectangle(rec.x, rec.y, width, rec.height, GRAY);
-        draw_button(rect, button_width, button_height, GREEN);
+        init_button(&button, button_width, button_height, BLUE, BLACK, text_pos, FONT_SIZE, 1.0f);
+        if (IsSoundPlaying(sound) == true) draw_button(font, &rect, &button, "pause");
+        else draw_button(font, &rect, &button, "play");
         if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             if (GetMouseX() <= rec.x + width && GetMouseY() <= rec.y + height){
