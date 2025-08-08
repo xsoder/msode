@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define FONT_SIZE 20
+#define MUSIC_AMT 100
 
 typedef struct {
     int width;
@@ -29,7 +30,7 @@ void draw_button(Font font, Rectangle *rect, Button *button, const char *text)
 }
 
 void init_button(Button *button,int width, int height,
-     Color fg_color, Color text_color, Vector2 text_pos, float font_size, float spacing)
+Color fg_color, Color text_color, Vector2 text_pos, float font_size, float spacing)
 {
     button->width = width;
     button->height = height;
@@ -40,15 +41,16 @@ void init_button(Button *button,int width, int height,
     button->spacing = spacing;
 }
 
+
 int main(void)
 {
+    Sound sound = {0};
     Win win = {0};
     win.width = 800;
-    win.height = 600;
+    win.height = 800;
     win.title = "Msode";
 
     float volume = 100.0f;
-    int second_passed = 0;
     int width = win.width;
     int height = 20;
 
@@ -60,75 +62,93 @@ int main(void)
     rec.width = 40;
     rec.height = 50;
 
+    Rectangle rect;
+    rect.x = 0;
+    rect.y = 0;
+    int button_width = 50;
+    int button_height = 50;
+    Vector2 text_pos;
+    text_pos.x = 3;
+    text_pos.y = 3;
+
+    int file_counter = 0;
+
+    char music_path[MUSIC_AMT];
+
 
     InitWindow(win.width, win.height, win.title);
     InitAudioDevice();
 
     // TODO: Tiny file dialog Integration
-    Sound sound = LoadSound("test.ogg");
     SetTargetFPS(60);
     // TODO: Make it load system font
     Font font = LoadFont("deps/font/Iosevka-Regular.ttf");
 
-    PlaySound(sound);
-
-    SetMasterVolume(volume);
-  
+    
     while(!WindowShouldClose())
     {
-        BeginDrawing();
-        second_passed += 1;
-        if(!IsWindowMaximized()){
-            width = GetScreenWidth();
-        }
-        ClearBackground(WHITE);
+        if (IsFileDropped())
+        {
+            FilePathList dropped_files = LoadDroppedFiles();
 
-        Rectangle rect;
-        rect.x = 0;
-        rect.y = 0;
-        int button_width = 50;
-        int button_height = 50;
-        Vector2 text_pos;
-        text_pos.x = 3;
-        text_pos.y = 3;
-        
-        DrawRectangle(rec.x, rec.y, width, rec.height, GRAY);
-        init_button(&button, button_width, button_height, BLUE, BLACK, text_pos, FONT_SIZE, 1.0f);
-        if (IsSoundPlaying(sound) == true) draw_button(font, &rect, &button, "pause");
-        else draw_button(font, &rect, &button, "play");
-        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-        {
-            if (GetMouseX() <= rec.x + width && GetMouseY() <= rec.y + height){
-                if(IsSoundPlaying(sound) == true) PauseSound(sound);
-                else ResumeSound(sound); 
+            for(int i = 0; i < (int)dropped_files.count; ++i)
+            {
+                if(file_counter < (MUSIC_AMT - 1))
+                {
+                    TextCopy(&music_path[file_counter + i], dropped_files.paths[i]);
+                    file_counter++;
+                }
             }
-            
+            UnloadDroppedFiles(dropped_files);
         }
-        if (IsKeyPressed(KEY_SPACE)){
-            if(IsSoundPlaying(sound) == true) PauseSound(sound);
-            else ResumeSound(sound); 
-        }
-        if (IsKeyPressed(KEY_F1))
+
+        BeginDrawing();
+        ClearBackground(BLACK);
+        if(file_counter == 0)
         {
-            if (GetMasterVolume() == 0.0f) SetMasterVolume(volume);
-            else SetMasterVolume(0.0f);
+            DrawText("Drag Or\n Drop music", GetScreenWidth()/2, GetScreenHeight()/2, 40, WHITE);
         }
-        if (IsKeyPressed(KEY_F2))
+
+        else
         {
-            volume -= 5.0f;
-            SetMasterVolume(volume);
+            for (int i = 0; i < MUSIC_AMT; i++)
+            {
+                if(IsSoundPlaying(sound) == false && IsSoundValid(sound) == false)
+                {
+                    sound = LoadSound(&music_path[i]);
+                    PlaySound(sound);
+                }
+                ClearBackground(RED);
+                
+                SetMasterVolume(volume);
+
+                if(!IsWindowMaximized())
+                {
+                    width = GetScreenWidth();
+                }
+                DrawRectangle(rec.x, rec.y, width, rec.height, GRAY);
+                init_button(&button, button_width, button_height, BLUE, BLACK, text_pos, FONT_SIZE, 1.0f);
+                if (IsSoundPlaying(sound) == true) draw_button(font, &rect, &button, "pause");
+                else draw_button(font, &rect, &button, "play");
+                if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    if (GetMouseX() <= rec.x + width && GetMouseY() <= rec.y + height){
+                        if(IsSoundPlaying(sound) == true) PauseSound(sound);
+                        else ResumeSound(sound); 
+                    }
+                    
+                }
+                if (IsKeyPressed(KEY_SPACE))
+                {
+                    if(IsSoundPlaying(sound) == true) PauseSound(sound);
+                    else ResumeSound(sound); 
+                }
+            }
         }
-        if (IsKeyPressed(KEY_F3))
-        {
-            volume += 5.0f;
-            SetMasterVolume(volume);
-        }
-        
         EndDrawing();
     }
-
-
-UnloadSound(sound);   
-CloseAudioDevice();
-CloseWindow();
+    
+    UnloadSound(sound);
+    CloseAudioDevice();
+    CloseWindow();
 }
