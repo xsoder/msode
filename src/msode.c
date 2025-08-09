@@ -1,154 +1,121 @@
 #include <raylib.h>
+#include "plug.h"
+#include "dsa.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define FONT_SIZE 20
-#define MUSIC_AMT 100
-
-typedef struct {
-    int width;
-    int height;
-    const char* title;
-} Win;
-
-typedef struct {
-    int width;
-    int height;
-    Color text_color;
-    Color fg_color;
-    Vector2 text_pos;
-    float font_size;
-    float spacing;
-    
-} Button;
-
-void draw_button(Font font, Rectangle *rect, Button *button, const char *text)
-{
-    DrawRectangle(rect->x, rect->y, button->width, button->height, button->fg_color);
-    DrawTextEx(font, text, button->text_pos, button->font_size, button->spacing, button->text_color);
-}
-
-void init_button(Button *button,int width, int height,
-Color fg_color, Color text_color, Vector2 text_pos, float font_size, float spacing)
-{
-    button->width = width;
-    button->height = height;
-    button->text_color = text_color;
-    button->fg_color = fg_color;
-    button->text_pos = text_pos;
-    button->font_size = font_size;
-    button->spacing = spacing;
-}
-
+#define MAX 200
+EXPORT_DA_TYPES()
 
 int main(void)
 {
-    Sound sound = {0};
+    Music music[MAX] = {0};
     Win win = {0};
     win.width = 800;
     win.height = 800;
     win.title = "Msode";
 
-    float volume = 100.0f;
-    int width = win.width;
-    int height = 20;
+    float volume = 1.0f;
 
-    Button button;
-
-    Rectangle rec;
-    rec.x = 0;
-    rec.y = 0;
-    rec.width = 40;
-    rec.height = 50;
-
-    Rectangle rect;
-    rect.x = 0;
-    rect.y = 0;
-    int button_width = 50;
-    int button_height = 50;
-    Vector2 text_pos;
-    text_pos.x = 3;
-    text_pos.y = 3;
+    int posx = 20;
+    int posy = 20;
 
     int file_counter = 0;
-
-    char music_path[MUSIC_AMT];
-
+    int item = 0;
+    bool requested = false;
 
     InitWindow(win.width, win.height, win.title);
     InitAudioDevice();
 
     // TODO: Tiny file dialog Integration
     SetTargetFPS(60);
-    // TODO: Make it load system font
-    Font font = LoadFont("deps/font/Iosevka-Regular.ttf");
 
-    
+    String_DA *music_path = init_String_dynamic_array(2);
     while(!WindowShouldClose())
     {
-        if (IsFileDropped())
-        {
-            FilePathList dropped_files = LoadDroppedFiles();
 
-            for(int i = 0; i < (int)dropped_files.count; ++i)
-            {
-                if(file_counter < (MUSIC_AMT - 1))
-                {
-                    TextCopy(&music_path[file_counter + i], dropped_files.paths[i]);
-                    file_counter++;
-                }
-            }
-            UnloadDroppedFiles(dropped_files);
+
+        if (!requested && file_counter > 0) {
+            PlayMusicStream(music[item]);
+            requested = true;
         }
-
+        UpdateMusicStream(music[item]);
         BeginDrawing();
-        ClearBackground(BLACK);
+        ClearBackground(GRAY);
+
         if(file_counter == 0)
         {
-            DrawText("Drag Or\n Drop music", GetScreenWidth()/2, GetScreenHeight()/2, 40, WHITE);
+            DrawText("Drag Or\n Drop music", GetScreenWidth()/2, GetScreenHeight()/2 + 10, 40, WHITE);
+            if (IsFileDropped())
+            {
+                FilePathList dropped_files = LoadDroppedFiles();
+
+                for(int i = 0; i < (int)dropped_files.count; ++i)
+                {
+                    if(file_counter < (MAX - 1))
+                    {
+                        append_String_DA(music_path, dropped_files.paths[i]);
+                        music[i] = LoadMusicStream(get_String_DA(music_path, file_counter));
+                        file_counter++;
+                    }
+                }
+                UnloadDroppedFiles(dropped_files);
+            }
         }
 
-        else
-        {
-            for (int i = 0; i < MUSIC_AMT; i++)
+        else{
+            DrawText(get_String_DA(music_path, item), posx, posy, 20,BLACK);
+            if (IsFileDropped())
             {
-                if(IsSoundPlaying(sound) == false && IsSoundValid(sound) == false)
-                {
-                    sound = LoadSound(&music_path[i]);
-                    PlaySound(sound);
-                }
-                ClearBackground(RED);
-                
-                SetMasterVolume(volume);
+                requested = false;
+                FilePathList dropped_files = LoadDroppedFiles();
 
-                if(!IsWindowMaximized())
+                for(int i = 0; i < (int)dropped_files.count; ++i)
                 {
-                    width = GetScreenWidth();
-                }
-                DrawRectangle(rec.x, rec.y, width, rec.height, GRAY);
-                init_button(&button, button_width, button_height, BLUE, BLACK, text_pos, FONT_SIZE, 1.0f);
-                if (IsSoundPlaying(sound) == true) draw_button(font, &rect, &button, "pause");
-                else draw_button(font, &rect, &button, "play");
-                if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                {
-                    if (GetMouseX() <= rec.x + width && GetMouseY() <= rec.y + height){
-                        if(IsSoundPlaying(sound) == true) PauseSound(sound);
-                        else ResumeSound(sound); 
+                    if(file_counter < MAX - 1)
+                    {
+                        append_String_DA(music_path, dropped_files.paths[i]);
+                        music[i] = LoadMusicStream(get_String_DA(music_path, file_counter));
+                        file_counter++;
                     }
-                    
                 }
-                if (IsKeyPressed(KEY_SPACE))
+                UnloadDroppedFiles(dropped_files);
+            }
+            float elapsed = GetMusicTimePlayed(music[item]);            
+            float length = GetMusicTimeLength(music[item]);
+            if (elapsed >= length) item++;
+            ClearBackground(GRAY);
+            SetMusicVolume(music[file_counter], volume);
+            Vector2 button_size = { 20, 20 };
+            Vector2 pos = { 10 , 10 };
+
+            if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                if (GetMouseX() <= button_size.x + pos.x && GetMouseY() <= pos.y + button_size.y)
                 {
-                    if(IsSoundPlaying(sound) == true) PauseSound(sound);
-                    else ResumeSound(sound); 
+                    if(IsMusicStreamPlaying(music[item]) == true) PauseMusicStream(music[item]);
+                    else ResumeMusicStream(music[item]); 
                 }
+                
+            }
+            if (IsKeyPressed(KEY_SPACE))
+            {
+                if(IsMusicStreamPlaying(music[item]) == true) PauseMusicStream(music[item]);
+                else ResumeMusicStream(music[item]); 
+            }
+            if (IsKeyPressed(KEY_N)){
+                if(IsMusicValid(music[item++]) == true) item++;
+                else item = 0;
+                requested = false;
             }
         }
         EndDrawing();
     }
-    
-    UnloadSound(sound);
+    for (int i = 0; i < file_counter; i++)
+    {
+        UnloadMusicStream(music[i]);
+    }
     CloseAudioDevice();
     CloseWindow();
 }

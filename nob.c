@@ -19,7 +19,6 @@ int main(int argc, char **argv)
         closedir(dir);
     }    
     else if(ENOENT == errno){
-        // nob_cmd_append(&cmd, "./autogen");
         nob_cmd_append(&cmd, "cc", "-Wall","-Wextra", "-o", "dep", "./src/deps.c");
         nob_cmd_append(&cmd, "-larchive", "-lcurl" ,"-lzip");
         if (!nob_cmd_run_sync(cmd)) return 1;
@@ -31,10 +30,14 @@ int main(int argc, char **argv)
     }
     else return 1;
 
-    // BUILDING THE PROJECT
-    nob_cmd_append(&cmd, "cc", "-Wall","-Wextra", "-o", "msode", "./src/msode.c");
+    nob_cmd_append(&cmd, "cc", "-Wall","-Wextra", "-ggdb", "-c", "msode", "./src/plug.c");
     nob_cmd_append(&cmd, "-Ideps/raylib/include");
-    nob_cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-l:libraylib.a");
+    nob_cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-l:libraylib.a", "-ldl");
+    cmd.count = 0;
+    // BUILDING THE PROJECT
+    nob_cmd_append(&cmd, "cc", "-Wall","-Wextra", "-ggdb", "-o", "msode", "./src/msode.c", "./src/plug.c");
+    nob_cmd_append(&cmd, "-Ideps/raylib/include");
+    nob_cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-l:libraylib.a", "-ldl");
     if (!nob_cmd_run_sync(cmd)) return 1;
     return 0;
 }
