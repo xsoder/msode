@@ -5,33 +5,79 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
+#include <assert.h>
+#include <complex.h>
+
+
+EXPORT_DA_TYPES()
 
 #define MAX 200
+#define N 256
+
 #define ARRAY_LEN(xs) sizeof(xs)/sizeof(xs[0])
-EXPORT_DA_TYPES()
 
 typedef struct {
     float left;
     float right;
 } Frame;
 
-Frame g_frame[4800] = {0};
-size_t g_frame_count;
+float in[N];
+float complex out[N];
+float max_amp;
+
+void fft(float in[], int s, float complex out[], int n)
+{
+    float pi = atan2f(1,1)*4
+    assert(n > 0);
+    if (n == 1) {
+        out[0] = in[0];
+        return;
+    }
+    fft(in, s*2, out, n/2);
+    fft(in + s, s*2, out + n/2, n/2);
+    for (int f = 0; f < n/2; ++f) {
+        float complex tw = cexpf(-I * 2 * pi * f / n) * out[f + n/2];
+        float complex e  = out[f];
+        out[f] = e + tw;
+        out[f + n/2] = e - tw;
+    }
+}
+
+float amp(float complex n)
+{
+    return sqrtf(crealf(n)*crealf(n) + cimagf(n)*cimagf(n));
+}
+
 void callback(void *buffer, unsigned int frames)
 {
-    size_t capacity = ARRAY_LEN(g_frame);
-    if(frames <= capacity - g_frame_count){
-        memcpy(g_frame + g_frame_count, buffer, sizeof(Frame)*frames);
-        g_frame_count += frames;
+    static int sample_index = 0;
+    static float sample_buffer[N];
+    Frame *fs = buffer;
+
+    for (unsigned int i = 0; i < frames; i++) {
+        sample_buffer[sample_index++] = fs[i].left;
+
+        if (sample_index >= N) {
+            for (int k = 0; k < N; k++) {
+                float w = 0.5f * (1 - cosf(2*M_PI*k/(N-1)));
+                in[k] = sample_buffer[k] * w;
+            }
+
+            fft(in, 1, out, N);
+
+            max_amp = 0.0f;
+            for (int k = 0; k < N; k++) {
+                float a = amp(out[k]);
+                if (a > max_amp) max_amp = a;
+            }
+            int leftover = sample_index - N;
+            memmove(sample_buffer, sample_buffer + N, leftover * sizeof(float));
+            sample_index = leftover;
+        }
     }
-    else if(frames <= capacity) {
-         memmove(g_frame, g_frame + frames, sizeof(Frame)*(capacity - frames));
-         memcpy(g_frame + (capacity - frames), buffer, sizeof(Frame)*frames);
-     } else {
-         memmove(g_frame, buffer, sizeof(Frame)*capacity);
-         g_frame_count = capacity;
-     }
- }
+}
+
 int main(void)
 {
     Music music[MAX] = {0};
@@ -89,6 +135,7 @@ int main(void)
         }
 
         else{
+            
             DrawText(get_String_DA(music_path, item), posx, posy, 20,BLACK);
             if (IsFileDropped())
             {
@@ -134,17 +181,12 @@ int main(void)
                 requested = false;
             }
         }
-        int w = GetScreenWidth();
-        int h = GetScreenWidth();
-        float cell_width = (float)w/g_frame_count;
-        for (size_t i = 0; i < g_frame_count; i++)
-        {
-            float t = g_frame[i].left;
-            if (t > 0){
-                DrawRectangle(i*cell_width, h/2 - h/2*t, 1, h/2*t, RED);
-            } else {
-                DrawRectangle(i*cell_width, h/2, 1, h/2*t, RED);
-            }
+        int w = GetRenderWidth();
+        int h = GetRenderHeight();
+        float cell_width = (float)w/N;
+        for (size_t i = 0; i < N/2; i++) { 
+            float t = amp(out[i]) / max_amp;
+            DrawRectangle(i * cell_width, h - h * t, cell_width, h * t, GREEN);
         }
         EndDrawing();
     }

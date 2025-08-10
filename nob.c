@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     nob_cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-l:libraylib.a", "-ldl");
     cmd.count = 0;
     // BUILDING THE PROJECT
-    nob_cmd_append(&cmd, "cc", "-Wall","-Wextra", "-ggdb", "-o", "msode", "./src/msode.c", "./src/plug.c");
+    nob_cmd_append(&cmd, "cc", "-Wall","-Wextra", "-ggdb", "-o", "msode", "./src/msode.c");
     nob_cmd_append(&cmd, "-Ideps/raylib/include");
     nob_cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-l:libraylib.a", "-ldl");
     if (!nob_cmd_run_sync(cmd)) return 1;
