@@ -3,7 +3,6 @@
 
 #include "./src/nob.h"
 #include <dirent.h>
-#include <errno.h>
 
 #define DEPS_DIR "deps"
 

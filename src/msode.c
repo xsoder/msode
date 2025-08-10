@@ -4,10 +4,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #define MAX 200
+#define ARRAY_LEN(xs) sizeof(xs)/sizeof(xs[0])
 EXPORT_DA_TYPES()
 
+typedef struct {
+    float left;
+    float right;
+} Frame;
+
+Frame g_frame[4800] = {0};
+size_t g_frame_count;
+void callback(void *buffer, unsigned int frames)
+{
+    size_t capacity = ARRAY_LEN(g_frame);
+    if(frames <= capacity - g_frame_count){
+        memcpy(g_frame + g_frame_count, buffer, sizeof(Frame)*frames);
+        g_frame_count += frames;
+    }
+    else if(frames <= capacity) {
+         memmove(g_frame, g_frame + frames, sizeof(Frame)*(capacity - frames));
+         memcpy(g_frame + (capacity - frames), buffer, sizeof(Frame)*frames);
+     } else {
+         memmove(g_frame, buffer, sizeof(Frame)*capacity);
+         g_frame_count = capacity;
+     }
+ }
 int main(void)
 {
     Music music[MAX] = {0};
@@ -35,8 +59,8 @@ int main(void)
     while(!WindowShouldClose())
     {
 
-
         if (!requested && file_counter > 0) {
+            AttachAudioStreamProcessor(music->stream, callback);
             PlayMusicStream(music[item]);
             requested = true;
         }
@@ -108,6 +132,18 @@ int main(void)
                 if(IsMusicValid(music[item++]) == true) item++;
                 else item = 0;
                 requested = false;
+            }
+        }
+        int w = GetScreenWidth();
+        int h = GetScreenWidth();
+        float cell_width = (float)w/g_frame_count;
+        for (size_t i = 0; i < g_frame_count; i++)
+        {
+            float t = g_frame[i].left;
+            if (t > 0){
+                DrawRectangle(i*cell_width, h/2 - h/2*t, 1, h/2*t, RED);
+            } else {
+                DrawRectangle(i*cell_width, h/2, 1, h/2*t, RED);
             }
         }
         EndDrawing();

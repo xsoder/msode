@@ -1,5 +1,6 @@
 #include "plug.h"
 
+
 void draw_button(Button *button, Texture texture ,Vector2 button_pos, Color fg_color)
 {
     button->texture = texture;
