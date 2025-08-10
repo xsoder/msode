@@ -28,7 +28,7 @@ float max_amp;
 
 void fft(float in[], int s, float complex out[], int n)
 {
-    float pi = atan2f(1,1)*4
+    float pi = atan2f(1,1)*4;
     assert(n > 0);
     if (n == 1) {
         out[0] = in[0];
