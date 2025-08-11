@@ -50,8 +50,8 @@ int main(void)
 {
     if (!reload_libplug()) return 1;
     Win win = {0};
-    win.width = 800;
-    win.height = 800;
+    win.width = 1400;
+    win.height = 900;
     win.title = "Msode";
 
     int file_counter = 0;

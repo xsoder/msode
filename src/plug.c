@@ -162,22 +162,38 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
     int w = GetRenderWidth();
     int h = GetRenderHeight();
     float cell_width = (float)w / (N/2);
-    
-    for (size_t i = 0; i < N/2; i++) { 
-        float t = 0.0f;
-        if (plug->max_amp > 0.0f) {
-            t = amp(plug->out[i]) / plug->max_amp;
+
+    if (IsMusicValid(plug->music[*item])) {
+        // TODO: Button
+        for (size_t i = 0; i < N/2; i++) { 
+            float t = 0.0f;
+            if (plug->max_amp > 0.0f) {
+                t = amp(plug->out[i]) / plug->max_amp;
+            }
+            
+            float bar_height = fmaxf(t * h * 0.8f, 2.0f);
+            float bar_width = fmaxf(cell_width - 1.0f, 1.0f);
+
+            int pannel = 50;
+            int cw = (i * cell_width);
+            int ch = h - bar_height - pannel;
+            Color color = GRAY;
+            if (IsMusicStreamPlaying(plug->music[*item])) color = BLUE;
+            DrawRectangle(cw , ch, bar_width, bar_height, color);
         }
-        
-        float bar_height = fmaxf(t * h * 0.8f, 2.0f);
-        float bar_width = fmaxf(cell_width - 1.0f, 1.0f);
-        
-        DrawRectangle(i * cell_width, h - bar_height, bar_width, bar_height, BLUE);
     }
-    
     if (*file_counter > 0) {
-        const char *current_file = get_String_DA(music_path, *item);
-        DrawText(TextFormat("Playing: %s (%d/%d)", GetFileName(current_file), *item + 1, *file_counter), 
-                 10, 10, 20, WHITE);
-             }
+        int x = 0;
+        int y = 10;
+        int font = 20;
+        int width = GetRenderWidth();
+        int height = 10 + font;
+        for (int i = 0; i < *file_counter; i++){
+            const char *current_file = get_String_DA(music_path, i);
+            if (IsMusicStreamPlaying(plug->music[i])) DrawRectangle(x, y, width, height, BLUE); 
+            else DrawRectangle(x, y, width, height, GRAY);
+            DrawText(TextFormat("Song playing: %s", current_file), x, y, font, WHITE);       
+            y += y;
+        }
+    }
 }
