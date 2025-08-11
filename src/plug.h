@@ -1,22 +1,29 @@
 #ifndef PLUG_H
 #define PLUG_H
 
-#define FONT_SIZE 20
+#include <raylib.h>
+#include <complex.h>
+#include "dsa.h"
 
+DECLARE_DA(const char*, String)
 
-#include "raylib.h"
+#define N 256
+#define MAX 200
+
 typedef struct {
-    int width;
-    int height;
-    const char* title;
-} Win;
+    float left;
+    float right;
+} Frame;
 
 typedef struct {
-    Texture texture;
-    Vector2 pos;
-    Color color;
-} Button;
+    float in[N];
+    float complex out[N];
+    float max_amp;
+    Music music[MAX];
+} Plug;
 
-void draw_button(Button *button, Texture texture,Vector2 button_pos, Color fg_color);
-void update_state(Button *button, Sound sound[], float volume, int item);
-#endif //PLUG_H
+typedef void (*plug_init_t)(Plug *plug, String_DA *music_path, int *file_counter);
+typedef void (*plug_update_t)(Plug *plug, String_DA *music_path, int *file_counter, int *item, bool *requested);
+
+#endif // PLUG_H
+

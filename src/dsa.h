@@ -52,11 +52,4 @@ void free_##name##_DA(name##_DA *array) { \
     free(array); \
 }
 
-#define EXPORT_DA_TYPES() \
-    DECLARE_DA(const char *, String)\
-    DECLARE_DA(char, Char)\
-    DECLARE_DA(int, Int)\
-    DECLARE_DA(double, Double)\
-    DECLARE_DA(float, Float)
-    
 #endif // DSA_H
