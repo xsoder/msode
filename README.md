@@ -1,4 +1,9 @@
 # MSODE 
+> ![WARNING]
+> The project is not fully completed. 
+> ![NOTE]
+> Will Add Support For windows in the future. 
+
 The next music player application for linux.
 
 To build the project follow the instructions below.
