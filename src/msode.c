@@ -66,7 +66,7 @@ int main(void)
 
 
     while (!WindowShouldClose())
-    {
+    
         BeginDrawing();
         ClearBackground(CLITERAL(Color) {0x18, 0x18, 0x18, 0xFF});
 
