@@ -65,7 +65,7 @@ int main(void)
     String_DA *music_path = init_String_dynamic_array(2);
 
 
-    while (!WindowShouldClose())
+    while (!WindowShouldClose()) {
     
         BeginDrawing();
         ClearBackground(CLITERAL(Color) {0x18, 0x18, 0x18, 0xFF});
