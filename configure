@@ -11,12 +11,14 @@ raylib_url="https://github.com/raysan5/raylib/releases/download/5.5/raylib-5.5_l
 tiny_file_h="https://raw.githubusercontent.com/native-toolkit/libtinyfiledialogs/refs/heads/master/tinyfiledialogs.h"
 tiny_file_c="https://raw.githubusercontent.com/native-toolkit/libtinyfiledialogs/refs/heads/master/tinyfiledialogs.c"
 font_url="https://github.com/be5invis/Iosevka/releases/download/v33.2.7/PkgTTF-Iosevka-33.2.7.zip"
+quick_ui_url="https://github.com/xsoder/quick-ui/releases/download/1.0.0-alpha/quick_ui.1.0.0-alpha.tar"
 
 # DIR
 DEPS="deps"
 FONT_DIR="font"
 TINY_DIR="tinyfiledialog"
 RAYLIB_DIR="raylib"
+QUICKUI_DIR="quickui"
 
 get_deps() {
 		if [ ! -d "$DEPS" ]; then
@@ -27,7 +29,7 @@ get_deps() {
 
 				printf "%s STARTING DEPENDENCY DOWNLOAD\n" "$LOG"
 
-				for url in "$raylib_url" "$tiny_file_h" "$tiny_file_c" "$font_url"; do
+				for url in "$raylib_url" "$tiny_file_h" "$tiny_file_c" "$font_url" "$quick_ui_url"; do
 						if ! wget -q "$url"; then
 								printf "%s Failed to download from %s\n" "$ERROR" "$url"
 								echo "Failed URL: $url" >> download_errors.log  
@@ -50,6 +52,10 @@ extarct_file() {
 						*.tar.gz)
 								printf "%s Extracting %s...\n" "$LOG" "$file"
 								tar -xzf "$file" && printf "%s Successfully extracted %s\n" "$SUCCESS" "$file" || printf "%s Failed to extract %s\n" "$ERROR" "$file"
+								;;
+                        *.tar)
+								printf "%s Extracting %s...\n" "$LOG" "$file"
+								tar -xvf "$file" && printf "%s Successfully extracted %s\n" "$SUCCESS" "$file" || printf "%s Failed to extract %s\n" "$ERROR" "$file"
 								;;
 						*.zip)
 								printf "%s Extracting %s...\n" "$LOG" "$file"
@@ -96,6 +102,7 @@ finalize_deps() {
 				printf "%s Directory %s exists, skipping...\n" "$WARNING" "$TINY_DIR"
 		fi
 
+
 		if [ ! -d "$RAYLIB_DIR" ]; then
 				printf "%s Directory %s does not exist. Creating directory...\n" "$LOG" "$RAYLIB_DIR"
 
@@ -107,6 +114,19 @@ finalize_deps() {
 				fi
 		else
 				printf "%s Directory %s exists, skipping...\n" "$WARNING" "$RAYLIB_DIR"
+		fi
+        
+        if [ ! -d "$QUICKUI_DIR" ]; then
+			printf "%s Directory %s does not exist. Creating directory...\n" "$LOG" "$QUICKUI_DIR"
+            
+			if [ -d "dist" ]; then
+				mv dist "$QUICKUI_DIR" || { printf "%s Failed to move dist to %s\n" "$ERROR" "$QUICKUI_DIR"; return 1; }
+				printf "%s Moved dist to %s\n" "$SUCCESS" "$QUICKUI_DIR"
+			else
+				printf "%s dist is not found, skipping...\n" "$WARNING"
+			fi
+		else
+			printf "%s Directory %s exists, skipping...\n" "$WARNING" "$QUICKUI_DIR"
 		fi
 }
 
@@ -123,6 +143,12 @@ clean_downloads() {
 				rm -f *.tar.gz && printf "%s Removed all .tar.gz files.\n" "$SUCCESS" || printf "%s Failed to remove .tar.gz files.\n" "$ERROR"
 		else
 				printf "%s No .tar.gz files found to remove.\n" "$WARNING"
+		fi
+
+        if ls *.tar 1> /dev/null 2>&1; then
+				rm -f *.tar && printf "%s Removed all .tar files.\n" "$SUCCESS" || printf "%s Failed to remove .tar files.\n" "$ERROR"
+		else
+				printf "%s No .tar files found to remove.\n" "$WARNING"
 		fi
 
 		printf "%s Cleanup completed.\n" "$LOG"

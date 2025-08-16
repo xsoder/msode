@@ -9,6 +9,12 @@
 // TODO: Not memory safe
 static Plug *g_plug = NULL;
 
+void draw_rect_raylib(qui_Context *ctx, float x, float y, float width, float height, qui_Color color)
+{
+    Color col = { color.r, color.g, color.b , color.a };
+    DrawRectangle((int)x, (int)y, (int)width, (int)height, col);
+}
+
 void fft(float in[], int s, float complex out[], int n)
 {
     assert(n > 0);
@@ -74,10 +80,11 @@ void callback(void *buffer, unsigned int frames)
     }
 }
 
-void plug_init(Plug *plug, String_DA *music_path, int *file_counter)
+void plug_init(Plug *plug, String_DA *music_path, int *file_counter, qui_Context *ctx)
 {
     (void)music_path;
     (void)file_counter;
+    (void)ctx;
     
     g_plug = plug;
     
@@ -104,8 +111,10 @@ void plug_init(Plug *plug, String_DA *music_path, int *file_counter)
     }
 }
 
-void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item, bool *requested)
+void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item, bool *requested, qui_Context *ctx)
 {
+
+    (void)ctx;
     if (*item >= *file_counter) *item = 0;
 
     if (!(*requested) && (*file_counter) > 0) {

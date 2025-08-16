@@ -1,7 +1,6 @@
 #include <dlfcn.h>
 #include "plug.h"
 #include "dsa.h"
-#include "nob.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +8,7 @@
 #include <math.h>
 #include <assert.h>
 #include <complex.h>
+#include "quickui.h"
 
 typedef struct {
     int width;
@@ -17,6 +17,7 @@ typedef struct {
 } Win;
 
 Plug plug = {0};
+qui_Context ctx = {0};
 
 const char *lib_name = "libplug.so";
 void *libplug = NULL;
@@ -63,7 +64,7 @@ int main(void)
 
     SetTargetFPS(60);
     String_DA *music_path = init_String_dynamic_array(2);
-
+    qui_init(&ctx, NULL);
 
     while (!WindowShouldClose()) {
     
@@ -71,11 +72,11 @@ int main(void)
         ClearBackground(CLITERAL(Color) {0x18, 0x18, 0x18, 0xFF});
 
         if (file_counter == 0) {
-            plug_init(&plug, music_path, &file_counter);
+            plug_init(&plug, music_path, &file_counter, &ctx);
         }
         if(IsKeyPressed(KEY_R)) if(!reload_libplug()) return 1;
 
-        plug_update(&plug, music_path, &file_counter, &item, &requested);
+        plug_update(&plug, music_path, &file_counter, &item, &requested, &ctx);
 
         EndDrawing();
     }

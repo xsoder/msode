@@ -11,8 +11,7 @@ int main(int argc, char **argv)
     Cmd cmd = {0};
 
     nob_cmd_append(&cmd, "bash", "configure");
-    if (!nob_cmd_run_sync(cmd)) return 1;
-    cmd.count = 0;
+    if (!nob_cmd_run(&cmd)) return 1;
 
     if(!nob_mkdir_if_not_exists(BUILD)) 
     nob_log(NOB_ERROR, "Could not create directory");
@@ -21,18 +20,17 @@ int main(int argc, char **argv)
     const char *exe = "build/msode";
 
     // BUILDING LIB-PLUG
-    nob_cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-ggdb", "-fPIC", "-shared", "-o", lib, "./src/plug.c");
+    nob_cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-ggdb",  "-Ideps/quickui/src","-fPIC", "-shared", "-o", lib,  "./deps/quickui/src/quickui.c","./src/plug.c");
     nob_cmd_append(&cmd, "-Ideps/raylib/include");
     nob_cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-lraylib", "-ldl");
-    if (!nob_cmd_run_sync(cmd)) return 1;
-    cmd.count = 0;
+    if (!nob_cmd_run(&cmd)) return 1;
 
     // BUILDING THE PROJECT
-    nob_cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-ggdb", "-o", exe, "./src/msode.c");
+    nob_cmd_append(&cmd, "cc", "-Wall","-Wextra", "-ggdb", "-Ideps/quickui/src","-o", exe, "./deps/quickui/src/quickui.c", "./src/msode.c");
     nob_cmd_append(&cmd, "-Ideps/raylib/include");
     nob_cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-lraylib", "-ldl");
     nob_cmd_append(&cmd, "-Lbuild/");
-    if (!nob_cmd_run_sync(cmd)) return 1;
+    if (!nob_cmd_run(&cmd)) return 1;
 
     return 0;
 
