@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+LD_LIBRARY_PATH="build:deps/raylib/lib" ./build/msode
