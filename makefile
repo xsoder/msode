@@ -5,3 +5,6 @@ nob:
 run:
 	./.ld
 
+clean:
+	rm -rf build/
+

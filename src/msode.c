@@ -63,16 +63,32 @@ int main(void)
     InitAudioDevice();
 
     SetTargetFPS(60);
+
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     String_DA *music_path = init_String_dynamic_array(2);
     qui_init(&ctx, NULL);
+
+    Image penger = LoadImage("resources/penger.png");
+    ImageResize(&penger, 150, 150);
+    Texture2D penger_texture = LoadTextureFromImage(penger);
+
+    Image play_img = LoadImage("resources/play.png");  
+    Image pause_img = LoadImage("resources/pause.png");  
+    Texture2D play_button = LoadTextureFromImage(play_img);
+    Texture2D pause_button = LoadTextureFromImage(pause_img);
+
+    qui_init(&ctx, NULL);
+        
+
 
     while (!WindowShouldClose()) {
     
         BeginDrawing();
         ClearBackground(CLITERAL(Color) {0x18, 0x18, 0x18, 0xFF});
 
+
         if (file_counter == 0) {
-            plug_init(&plug, music_path, &file_counter, &ctx);
+            plug_init(&plug, music_path, &file_counter, penger_texture,&ctx);
         }
         if(IsKeyPressed(KEY_R)) if(!reload_libplug()) return 1;
 
