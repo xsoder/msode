@@ -1,7 +1,7 @@
 default:
 	./nob
 nob:
-	cc -o -Isrc nob nob.c	
+	cc -Isrc -o nob nob.c	
 run:
 	./.ld
 clean:
