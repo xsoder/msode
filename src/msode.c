@@ -49,6 +49,7 @@ bool reload_libplug(void)
 }
 int main(void)
 {
+
     if (!reload_libplug()) return 1;
     Win win = {0};
     win.width = 1400;
@@ -61,7 +62,7 @@ int main(void)
 
     InitWindow(win.width, win.height, win.title);
     InitAudioDevice();
-
+    SetTraceLogLevel(LOG_NONE);
     SetTargetFPS(60);
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
