@@ -9,8 +9,9 @@ The next music player application for linux.
 ## BUILD INSTRUCTION
 Build Nob first it is responsible for compilation.
 ```bash
-cc -o nob nob.c
+make nob
 ```
+
 Then just run the nob executable it does not check if the libraries exist.
 
 ```bash
