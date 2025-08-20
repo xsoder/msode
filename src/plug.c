@@ -5,14 +5,14 @@
 #include <complex.h>
 #include <assert.h>
 #include <string.h>
-
+#include <rlgl.h>
 // TODO: Not memory safe
 static Plug *g_plug = NULL;
 static float volume_fade = 0.0f;
 static float time_fade = 0.0f;
 static float button_fade = 0.0f;
 
-
+static float volume = 1.0f;
 
 static int qui_mouse_in_area(qui_Context *ctx, float x, float y, float w, float h) {
     int mx = ctx->mouse_pos.x;
@@ -70,37 +70,41 @@ void callback(void *buffer, unsigned int frames)
 {
     if (g_plug == NULL) return;
     
-    static int sample_index = 0;
-    static float sample_buffer[2 * N];
+    static float sample_buffer[N];
+    static int buffer_pos = 0;
+    static int initialized = 0;
+    
+    if (!initialized) {
+        memset(sample_buffer, 0, sizeof(sample_buffer));
+        initialized = 1;
+    }
 
     Frame *fs = (Frame *)buffer;
 
     for (unsigned int i = 0; i < frames; i++) {
-        if (sample_index >= N) sample_index = 0;
+        sample_buffer[buffer_pos] = fs[i].left;
+        buffer_pos = (buffer_pos + 1) % N;
         
-        sample_buffer[sample_index++] = fs[i].left;
-
-        if (sample_index >= N) {
-            // Apply Hann window and copy to plug's in array
+        if (buffer_pos % (N/4) == 0) {
+            float ordered_buffer[N];
+            
+            for (int j = 0; j < N; j++) {
+                int idx = (buffer_pos + j) % N;
+                ordered_buffer[j] = sample_buffer[idx];
+            }
+            
+            // Apply Hann window
             for (int k = 0; k < N; k++) {
-                float w = 0.5f * (1.0f - cosf(2*PI*k/(N-1)));
-                g_plug->in[k] = sample_buffer[k] * w;
+                float w = 0.5f * (1.0f - cosf(2.0f * PI * k / (N - 1)));
+                g_plug->in[k] = ordered_buffer[k] * w;
             }
 
             fft(g_plug->in, 1, g_plug->out, N);
 
             g_plug->max_amp = 0.0f;
-            for (int k = 0; k < N; k++) {
+            for (int k = 1; k < N/2; k++) {
                 float a = amp(g_plug->out[k]);
                 if (a > g_plug->max_amp) g_plug->max_amp = a;
-            }
-            
-            int leftover = sample_index - N;
-            if (leftover > 0 && leftover < N) {
-                memmove(sample_buffer, sample_buffer + N, leftover * sizeof(float));
-                sample_index = leftover;
-            } else {
-                sample_index = 0;
             }
         }
     }
@@ -142,7 +146,57 @@ void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D p
     }
 }
 
-float volume = 1.0f;
+
+void draw_frequency_bars(Plug *plug, int screen_width, int screen_height, int current_item)
+{
+    if (!IsMusicValid(plug->music[current_item])) return;
+    
+    float sample_rate = 44100.0f;
+    float freq_resolution = sample_rate / N;
+    
+    float min_freq = 20.0f;
+    float max_freq = 20000.0f; 
+    
+    int num_bars = N/2 - 1;
+    float total_width = (float)screen_width;
+    float bar_spacing = 2.0f;
+    float available_width = total_width - (bar_spacing * (num_bars - 1));
+    float bar_width = available_width / num_bars;
+    
+    if (bar_width < 1.0f) {
+        bar_width = 1.0f;
+        bar_spacing = fmaxf((total_width - (bar_width * num_bars)) / (num_bars - 1), 0.0f);
+    }
+    
+    int bar_count = 0;
+    for (int i = 1; i < N/2; i++) { 
+        float frequency = i * freq_resolution;
+        
+        if (frequency < min_freq || frequency > max_freq) continue;
+        
+        float amplitude = 0.0f;
+        if (plug->max_amp > 0.0f) {
+            amplitude = amp(plug->out[i]) / plug->max_amp;
+        }
+        
+        // Apply logarithmic scaling
+        float log_amplitude = log10f(1.0f + amplitude * 9.0f); 
+        
+        float bar_height = fmaxf(log_amplitude * screen_height * 0.7f, 2.0f);
+
+        int panel = 100;
+        int x = bar_count * (bar_width + bar_spacing);
+        int y = screen_height - bar_height - panel;
+        
+        float hue = fminf((log10f(frequency) - log10f(min_freq)) / (log10f(max_freq) - log10f(min_freq)) * 270.0f, 270.0f);
+        Color color = ColorFromHSV(hue, 1.0f, 1.0f);
+        
+        if (!IsMusicStreamPlaying(plug->music[current_item])) color = GRAY;
+        
+        DrawRectangle(x, y, (int)bar_width, (int)bar_height, color);
+        bar_count++;
+    }
+}
 
 void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item, bool *requested, qui_Context *ctx)
 {
@@ -282,25 +336,8 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
     int h = GetRenderHeight();
     float cell_width = (float)w / (N/2);
 
-    if (*file_counter > 0 && IsMusicValid(plug->music[*item])) {
-        for (size_t i = 0; i < N/2; i++) { 
-            float t = 0.0f;
-            if (plug->max_amp > 0.0f) {
-                t = amp(plug->out[i]) / plug->max_amp;
-            }
-            
-            float bar_height = fmaxf(t * h * 0.7f, 2.0f);
-            float bar_width = fmaxf(cell_width - 1.0f, 1.0f);
+    draw_frequency_bars(plug, w, h, *item);
 
-            int panel = 100;
-            int cw = (i * cell_width);
-            int ch = h - bar_height - panel;
-            Color color = GRAY;
-            if (IsMusicStreamPlaying(plug->music[*item])) color = BLUE;
-            DrawRectangle(cw , ch, bar_width, bar_height, color);
-        }
-    }
-    
     if (*file_counter > 0) {
         int x = 20;
         int y = 10;
