@@ -64,7 +64,7 @@ int main(void)
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(win.width, win.height, win.title);
     Font font = LoadFont(FONT);
-    int font_size = 16;
+    int font_size = 18;
     int font_spacing = 1;
     InitAudioDevice();
     SetTraceLogLevel(LOG_NONE);

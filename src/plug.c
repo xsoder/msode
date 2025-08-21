@@ -13,7 +13,7 @@ static Plug *g_plug = NULL;
 static float volume_fade = 0.0f;
 static float time_fade = 0.0f;
 static float button_fade = 0.0f;
-
+static float state = 0.0f;
 static float volume = 1.0f;
 
 static int qui_mouse_in_area(qui_Context *ctx, float x, float y, float w, float h) {
@@ -308,7 +308,7 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
             if (volume_fade > 0.1f) {
                 ctx->cursor_x = volume_x - 55;
                 ctx->cursor_y = (int)slider_y + 10;
-                qui_slider_float(ctx, "Volume", &volume, 0.0f, 1.0f, 200.0f);
+                qui_slider_float(ctx, "Vol", &volume, 0.0f, 1.0f, 200.0f);
             } else {
                 Vector2 vol_pos = {(int)(volume_x + 1), (int)(slider_y + 8) };
                 DrawTextEx(font,"Vol", vol_pos , txt_font_size, txt_font_space, text_color);
@@ -349,6 +349,24 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
         } else {
             ResumeMusicStream(plug->music[(*item)]); 
         }
+    }
+
+    float rate = 0.1f;
+    if (IsKeyPressed(KEY_UP)) {
+        volume += rate;
+        if (volume >= 1.0f) volume = 1.0f;
+    }
+    if (IsKeyPressed(KEY_DOWN)) {
+        volume -= rate;
+        if (volume <= 0.0f) volume = 0.0f;
+    }
+
+    if (IsKeyPressed(KEY_M)){
+        if (volume != 0.0f){
+            state = volume;
+            volume = 0.0f;
+        }
+        else volume = state;
     }
     
     if (IsKeyPressed(KEY_N) && *file_counter > 0) {
