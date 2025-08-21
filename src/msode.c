@@ -65,7 +65,7 @@ int main(void)
     InitWindow(win.width, win.height, win.title);
     Font font = LoadFont(FONT);
     int font_size = 16;
-    int font_spacing = 4;
+    int font_spacing = 1;
     InitAudioDevice();
     SetTraceLogLevel(LOG_NONE);
     SetTargetFPS(60);

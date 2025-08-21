@@ -330,7 +330,12 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
             Vector2 pos = { (int)(time_x + 260), (int)(slider_y + (int)txt_font_size - 9) };
             float time_font_size = 18.0f;
             float time_font_space = 2.0f;
-            DrawTextEx(font,TextFormat("%.1f/%.1f", elapsed, length) , pos , time_font_size, time_font_space, text_color );
+            int elapsed_min = (int)(elapsed) / 60;
+            int elapsed_sec = (int)(elapsed) % 60;
+            int length_min = (int)(length) / 60;
+            int length_sec = (int)(length) % 60;
+
+            DrawTextEx(font, TextFormat("%02d:%02d / %02d:%02d", elapsed_min, elapsed_sec, length_min, length_sec), pos, time_font_size, time_font_space, text_color);
         }
     }
     
