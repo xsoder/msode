@@ -72,10 +72,10 @@ int main(void)
     Image penger = LoadImage("resources/penger.png");
     ImageResize(&penger, 150, 150);
     Texture2D penger_texture = LoadTextureFromImage(penger);
-    Image play_img = LoadImage("resources/play.png");  
-    Image pause_img = LoadImage("resources/pause.png");  
-    Texture2D play_button = LoadTextureFromImage(play_img);
-    Texture2D pause_button = LoadTextureFromImage(pause_img);
+    //Image play_img = LoadImage("resources/play.png");  
+    //Image pause_img = LoadImage("resources/pause.png");  
+    //Texture2D play_button = LoadTextureFromImage(play_img);
+    //Texture2D pause_button = LoadTextureFromImage(pause_img);
 
     qui_init(&ctx, NULL);
         

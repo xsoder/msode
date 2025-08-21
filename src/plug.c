@@ -346,8 +346,8 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
 
     if (*file_counter > 0) {
         int x = 26;
-        int y = 40;//h - 90;
-        int font = 40;
+        int y = h - 90;
+        int font = 20;
         
         const char *current_file = get_String_DA(music_path, *item);
         DrawText(TextFormat("Now Playing: %s", current_file), x, y, font, WHITE);
