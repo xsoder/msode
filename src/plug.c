@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 #include <rlgl.h>
+
 // TODO: Not memory safe
 static Plug *g_plug = NULL;
 static float volume_fade = 0.0f;
@@ -70,13 +71,18 @@ void callback(void *buffer, unsigned int frames)
 {
     if (g_plug == NULL) return;
     
+    static unsigned long long call_count = 0;
     static float sample_buffer[N];
     static int buffer_pos = 0;
     static int initialized = 0;
     
+    call_count++;
+    
     if (!initialized) {
         memset(sample_buffer, 0, sizeof(sample_buffer));
+        buffer_pos = 0;
         initialized = 1;
+        printf("Callback reinitialized (call %llu)\n", call_count);
     }
 
     Frame *fs = (Frame *)buffer;
@@ -112,9 +118,6 @@ void callback(void *buffer, unsigned int frames)
 
 void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D penger_texture, qui_Context *ctx)
 {
-    (void)music_path;
-    (void)file_counter;
-
     g_plug = plug;
     
     plug->max_amp = 0.0f;
@@ -128,28 +131,29 @@ void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D p
     ctx->text_width = text_width_raylib;
     ctx->text_height = text_height_raylib;
     
-    const char *msg = "Drag Or\n Drop \n Music";
-    int tw = MeasureText("Drag Or", 40);
-    DrawText(msg, (GetScreenWidth() - tw) / 2, GetScreenHeight()/2 - 60, 40, WHITE);
-    DrawTexture(penger_texture, GetScreenWidth() / 2, GetScreenHeight() /2, LIGHTGRAY);
-    
-    if (IsFileDropped()) {
-        FilePathList dropped_files = LoadDroppedFiles();
-        for(int i = 0; i < (int)dropped_files.count; ++i) {
-            if(*file_counter < (MAX - 1)) {
-                append_String_DA(music_path, strdup(dropped_files.paths[i]));
-                plug->music[*file_counter] = LoadMusicStream(get_String_DA(music_path, *file_counter));
-                (*file_counter)++;
+    if (*file_counter == 0) {
+        const char *msg = "Drag Or\n Drop \n Music";
+        int tw = MeasureText("Drag Or", 40);
+        DrawText(msg, (GetScreenWidth() - tw) / 2, GetScreenHeight()/2 - 60, 40, WHITE);
+        DrawTexture(penger_texture, GetScreenWidth() / 2, GetScreenHeight() /2, LIGHTGRAY);
+        
+        if (IsFileDropped()) {
+            FilePathList dropped_files = LoadDroppedFiles();
+            for(int i = 0; i < (int)dropped_files.count; ++i) {
+                if(*file_counter < (MAX - 1)) {
+                    append_String_DA(music_path, strdup(dropped_files.paths[i]));
+                    plug->music[*file_counter] = LoadMusicStream(get_String_DA(music_path, *file_counter));
+                    (*file_counter)++;
+                }
             }
+            UnloadDroppedFiles(dropped_files);
         }
-        UnloadDroppedFiles(dropped_files);
     }
 }
 
-
 void draw_frequency_bars(Plug *plug, int screen_width, int screen_height, int current_item)
 {
-    if (!IsMusicValid(plug->music[current_item])) return;
+    if (current_item < 0 || !IsMusicValid(plug->music[current_item])) return;
     
     float sample_rate = 44100.0f;
     float freq_resolution = sample_rate / N;
@@ -215,8 +219,12 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
     if (*item >= *file_counter) *item = 0;
 
     if (!(*requested) && (*file_counter) > 0) {
+        
         AttachAudioStreamProcessor(plug->music[*item].stream, callback);
-        PlayMusicStream(plug->music[*item]);
+        
+        if (!IsMusicStreamPlaying(plug->music[*item])) {
+            PlayMusicStream(plug->music[*item]);
+        }
         *requested = true;
     }
     
@@ -309,7 +317,6 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
             DrawRectangleLines((int)(time_x + 50), (int)(slider_y + 12), 200, 4, GRAY);
             
             DrawText(TextFormat("%.1f/%.1f", elapsed, length), (int)(time_x + 260), (int)(slider_y + 8), 12, text_color);
-            
         }
     }
     
@@ -334,14 +341,13 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
 
     int w = GetRenderWidth();
     int h = GetRenderHeight();
-    float cell_width = (float)w / (N/2);
 
     draw_frequency_bars(plug, w, h, *item);
 
     if (*file_counter > 0) {
-        int x = 20;
-        int y = 10;
-        int font = 16;
+        int x = 26;
+        int y = 40;//h - 90;
+        int font = 40;
         
         const char *current_file = get_String_DA(music_path, *item);
         DrawText(TextFormat("Now Playing: %s", current_file), x, y, font, WHITE);

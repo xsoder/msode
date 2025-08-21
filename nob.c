@@ -26,7 +26,7 @@ int main(int argc, char **argv)
     if (!nob_cmd_run(&cmd)) return 1;
 
     // BUILDING THE PROJECT
-    nob_cmd_append(&cmd, "cc", "-Wall","-Wextra", "-ggdb", "-Ideps/quickui/src","-o", exe, "./deps/quickui/src/quickui.c", "./src/msode.c");
+    nob_cmd_append(&cmd, "cc", "-Wall","-Wextra", "-ggdb", "-Ideps/quickui/src","-o", exe, "./deps/quickui/src/quickui.c", "./src/ffmpeg-linux.c", "./src/msode.c");
     nob_cmd_append(&cmd, "-Ideps/raylib/include");
     nob_cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-lraylib", "-ldl");
     nob_cmd_append(&cmd, "-Lbuild/");

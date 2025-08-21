@@ -10,7 +10,6 @@
 #include <complex.h>
 #include "quickui.h"
 
-
 typedef struct {
     int width;
     int height;
@@ -49,10 +48,8 @@ bool reload_libplug(void)
     return true;
 }
 
-
 int main(void)
 {
-
     if (!reload_libplug()) return 1;
     Win win = {0};
     win.width = 1400;
@@ -70,7 +67,6 @@ int main(void)
     SetTraceLogLevel(LOG_NONE);
     SetTargetFPS(60);
     
-    
     String_DA *music_path = init_String_dynamic_array(2);
     qui_init(&ctx, NULL);
     Image penger = LoadImage("resources/penger.png");
@@ -87,26 +83,43 @@ int main(void)
         BeginDrawing();
         ClearBackground(CLITERAL(Color) {0x18, 0x18, 0x18, 0xFF});
 
-
         if (file_counter == 0) {
-            plug_init(&plug, music_path, &file_counter, penger_texture,&ctx);
+            plug_init(&plug, music_path, &file_counter, penger_texture, &ctx);
         }
-        if(IsKeyPressed(KEY_R)) if(!reload_libplug()) return 1;
+        
+        if(IsKeyPressed(KEY_R)) {
+            bool was_playing = false;
+            if (file_counter > 0 && requested) {
+                was_playing = IsMusicStreamPlaying(plug.music[item]);
+                DetachAudioStreamProcessor(plug.music[item].stream, NULL);
+                requested = false;
+            }
+            
+            if(!reload_libplug()) return 1;
+            
+            plug_init(&plug, music_path, &file_counter, penger_texture, &ctx);
+            
+            if (file_counter > 0) {
+                requested = false;
+            }
+        }
 
         plug_update(&plug, music_path, &file_counter, &item, &requested, &ctx);
 
         EndDrawing();
     }
-    for (int i = 0; i < file_counter; i++)
-    {
-        if (plug.music[i].stream.buffer != NULL)  UnloadMusicStream(plug.music[i]);
+    
+    for (int i = 0; i < file_counter; i++) {
+        if (plug.music[i].stream.buffer != NULL) {
+            DetachAudioStreamProcessor(plug.music[i].stream, NULL);
+            UnloadMusicStream(plug.music[i]);
+        }
     }
     
     if (music_path) free_String_DA(music_path);
 
     CloseAudioDevice();
     CloseWindow();
-    
     
     return 0;
 }
