@@ -9,7 +9,7 @@ The next music player application for linux.
 ## BUILD INSTRUCTION
 Build Nob first it is responsible for compilation.
 ```bash
-make nob
+cc -Isrc/ -o nob nob.c
 ```
 
 Then just run the nob executable it does not check if the libraries exist.
@@ -18,3 +18,8 @@ Then just run the nob executable it does not check if the libraries exist.
 ./nob
 ```
 The autogen with grab all the necessary dependencies.
+
+To run the program simply execute
+```bash
+./build/msode
+```

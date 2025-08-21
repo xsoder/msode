@@ -149,3 +149,11 @@ get_deps
 extarct_file
 finalize_deps
 clean_downloads
+
+EXPORT_LINE='export LD_LIBRARY_PATH="build:deps/raylib/lib"'
+if ! grep -Fxq "$EXPORT_LINE" ~/.bashrc; then
+    echo "$EXPORT_LINE" >> ~/.bashrc
+    printf "%s Added export to ~/.bashrc\n" "$SUCCESS"
+else
+    printf "%s Export already exists in ~/.bashrc, skipping...\n" "$WARNING"
+fi
