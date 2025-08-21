@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <complex.h>
 #include "quickui.h"
+#include "config.h"
 
 typedef struct {
     int width;
@@ -62,29 +63,29 @@ int main(void)
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(win.width, win.height, win.title);
-
+    Font font = LoadFont(FONT);
+    int font_size = 16;
+    int font_spacing = 4;
     InitAudioDevice();
     SetTraceLogLevel(LOG_NONE);
     SetTargetFPS(60);
     
     String_DA *music_path = init_String_dynamic_array(2);
-    qui_init(&ctx, NULL);
     Image penger = LoadImage("resources/penger.png");
     ImageResize(&penger, 150, 150);
     Texture2D penger_texture = LoadTextureFromImage(penger);
-    //Image play_img = LoadImage("resources/play.png");  
-    //Image pause_img = LoadImage("resources/pause.png");  
-    //Texture2D play_button = LoadTextureFromImage(play_img);
-    //Texture2D pause_button = LoadTextureFromImage(pause_img);
+
+    // TODO: system wide font install
 
     qui_init(&ctx, NULL);
+    qui_set_font(&ctx, &font, font_size, font_spacing);
         
     while (!WindowShouldClose()) {
         BeginDrawing();
-        ClearBackground(CLITERAL(Color) {0x18, 0x18, 0x18, 0xFF});
+        ClearBackground(BG_COLOR);
 
         if (file_counter == 0) {
-            plug_init(&plug, music_path, &file_counter, penger_texture, &ctx);
+            plug_init(&plug, music_path, &file_counter, penger_texture, font,&ctx);
         }
         
         if(IsKeyPressed(KEY_R)) {
@@ -97,14 +98,14 @@ int main(void)
             
             if(!reload_libplug()) return 1;
             
-            plug_init(&plug, music_path, &file_counter, penger_texture, &ctx);
+            plug_init(&plug, music_path, &file_counter, penger_texture, font, &ctx);
             
             if (file_counter > 0) {
                 requested = false;
             }
         }
 
-        plug_update(&plug, music_path, &file_counter, &item, &requested, &ctx);
+        plug_update(&plug, music_path, &file_counter, &item, &requested, font, &ctx);
 
         EndDrawing();
     }

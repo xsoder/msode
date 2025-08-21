@@ -1,8 +1,7 @@
 default:
+	cc -Isrc -o nob nob.c		
 	./nob
-nob:
-	cc -Isrc -o nob nob.c	
-run:
+run:default
 	./.ld
 clean:
 	rm -rf build/

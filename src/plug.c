@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 #include <rlgl.h>
+#include "config.h"
 
 // TODO: Not memory safe
 static Plug *g_plug = NULL;
@@ -27,9 +28,15 @@ void draw_rect_raylib(qui_Context *ctx, float x, float y, float width, float hei
     DrawRectangle((int)x, (int)y, (int)width, (int)height, col);
 }
 
-void draw_text_raylib(qui_Context *ctx, const char *text, float x, float y)
-{
-    DrawText(text, (int)x, (int)y, 16, WHITE);
+void draw_text_raylib(qui_Context* ctx, const char *text, float x, float y) {
+    Font *font = (Font *)ctx->font;
+    Color font_color = GRAY;
+    if (!font){
+        DrawText(text, (int)x, (int)y, 20, font_color);
+    } 
+    else{
+        DrawTextEx(*font, text, (Vector2){x, y}, ctx->font_size,ctx->font_spacing, font_color);
+    }
 }
 
 float text_width_raylib(qui_Context *ctx, const char *text)
@@ -82,7 +89,6 @@ void callback(void *buffer, unsigned int frames)
         memset(sample_buffer, 0, sizeof(sample_buffer));
         buffer_pos = 0;
         initialized = 1;
-        printf("Callback reinitialized (call %llu)\n", call_count);
     }
 
     Frame *fs = (Frame *)buffer;
@@ -116,7 +122,7 @@ void callback(void *buffer, unsigned int frames)
     }
 }
 
-void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D penger_texture, qui_Context *ctx)
+void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D penger_texture, Font font,qui_Context *ctx)
 {
     g_plug = plug;
     
@@ -134,7 +140,10 @@ void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D p
     if (*file_counter == 0) {
         const char *msg = "Drag Or\n Drop \n Music";
         int tw = MeasureText("Drag Or", 40);
-        DrawText(msg, (GetScreenWidth() - tw) / 2, GetScreenHeight()/2 - 60, 40, WHITE);
+        float font_size = 40;
+        float font_space = 2;
+        Vector2 position = {(GetScreenWidth() - tw) / 2, GetScreenHeight()/2 - 60 };
+        DrawTextEx(font, msg, position, font_size, font_space, WHITE);
         DrawTexture(penger_texture, GetScreenWidth() / 2, GetScreenHeight() /2, LIGHTGRAY);
         
         if (IsFileDropped()) {
@@ -164,8 +173,7 @@ void draw_frequency_bars(Plug *plug, int screen_width, int screen_height, int cu
     int num_bars = N/2 - 1;
     float total_width = (float)screen_width;
     float bar_spacing = 2.0f;
-    float available_width = total_width - (bar_spacing * (num_bars - 1));
-    float bar_width = available_width / num_bars;
+    float bar_width = total_width / num_bars;
     
     if (bar_width < 1.0f) {
         bar_width = 1.0f;
@@ -202,7 +210,7 @@ void draw_frequency_bars(Plug *plug, int screen_width, int screen_height, int cu
     }
 }
 
-void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item, bool *requested, qui_Context *ctx)
+void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item, bool *requested, Font font,qui_Context *ctx)
 {
     Vector2 mouse_pos = GetMousePosition();
     qui_mouse_move(ctx, (int)mouse_pos.x, (int)mouse_pos.y);
@@ -293,30 +301,36 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
             }
 
             Color color = BLUE;
+            Color text_color = {200, 200, 200, (unsigned char)(100 + 155 * (1.0f - volume_fade))};
+            float txt_font_size = 20.0f;
+            float txt_font_space = 2.0f;
             if (!IsMusicStreamPlaying(plug->music[*item])) color = GRAY;
             if (volume_fade > 0.1f) {
-                ctx->cursor_x = volume_x;
-                ctx->cursor_y = slider_y;
+                ctx->cursor_x = volume_x - 55;
+                ctx->cursor_y = (int)slider_y + 10;
                 qui_slider_float(ctx, "Volume", &volume, 0.0f, 1.0f, 200.0f);
             } else {
-                Color text_color = {200, 200, 200, (unsigned char)(100 + 155 * (1.0f - volume_fade))};
-                DrawText("Vol", (int)(volume_x + 5), (int)(slider_y + 8), 14, text_color);
+                Vector2 vol_pos = {(int)(volume_x + 1), (int)(slider_y + 8) };
+                DrawTextEx(font,"Vol", vol_pos , txt_font_size, txt_font_space, text_color);
                 
                 int vol_bar_width = (int)(30 * volume);
-                DrawRectangle((int)(volume_x + 35), (int)(slider_y + 12), vol_bar_width, 4, color);
-                DrawRectangleLines((int)(volume_x + 35), (int)(slider_y + 12), 30, 4, GRAY);
+                DrawRectangle((int)(volume_x + 35), (int)(slider_y + (int)txt_font_size - 3), vol_bar_width, 4, color);
+                DrawRectangleLines((int)(volume_x + 35), (int)(slider_y + (int)txt_font_size - 3), vol_bar_width, 4, GRAY);
             }
 
             // TODO: Add slider for time
-            Color text_color = {200, 200, 200, (unsigned char)(100 + 155 * (1.0f - time_fade))};
-            DrawText("Time", (int)(time_x + 5), (int)(slider_y + 8), 14, text_color);
+            Vector2 time_pos = {(int)(time_x + 5), (int)(slider_y + 8) };
+            DrawTextEx(font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
             
             float progress = (length > 0) ? (elapsed / length) : 0.0f;
             int progress_width = (int)(200 * progress);
-            DrawRectangle((int)(time_x + 50), (int)(slider_y + 12), progress_width, 4, color);
-            DrawRectangleLines((int)(time_x + 50), (int)(slider_y + 12), 200, 4, GRAY);
-            
-            DrawText(TextFormat("%.1f/%.1f", elapsed, length), (int)(time_x + 260), (int)(slider_y + 8), 12, text_color);
+            DrawRectangle((int)(time_x + 50), (int)(slider_y + (int)txt_font_size - 3), progress_width, 4, color);
+            DrawRectangleLines((int)(time_x + 50), (int)(slider_y + (int)txt_font_size - 3), 200, 4, GRAY);
+
+            Vector2 pos = { (int)(time_x + 260), (int)(slider_y + (int)txt_font_size - 9) };
+            float time_font_size = 18.0f;
+            float time_font_space = 2.0f;
+            DrawTextEx(font,TextFormat("%.1f/%.1f", elapsed, length) , pos , time_font_size, time_font_space, text_color );
         }
     }
     
@@ -347,10 +361,11 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
     if (*file_counter > 0) {
         int x = 26;
         int y = h - 90;
-        int font = 20;
+        float fontsize = 20.0f;
         
         const char *current_file = get_String_DA(music_path, *item);
-        DrawText(TextFormat("Now Playing: %s", current_file), x, y, font, WHITE);
+        Vector2 pos = { x , y };
+        DrawTextEx(font, TextFormat("Playing: %s", current_file) , pos, fontsize, 2.0f, WHITE);
     }
     
     qui_end(ctx);
