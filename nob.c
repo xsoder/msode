@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     const char *exe = "build/msode";
 
     // BUILDING LIB-PLUG
-    nob_cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-ggdb", "-Ideps/quickui/src","-fPIC", "-shared", "-o", lib,  "./deps/quickui/src/quickui.c","./src/plug.c");
+    nob_cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-ggdb", "-Ideps/quickui/src", "-Ideps/tinyfiledialog","-fPIC", "-shared", "-o", lib,  "./deps/tinyfiledialog/tinyfiledialogs.c", "./deps/quickui/src/quickui.c","./src/plug.c");
     nob_cmd_append(&cmd, "-Ideps/raylib/include");
     nob_cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-lraylib", "-ldl");
     if (!nob_cmd_run(&cmd)) return 1;

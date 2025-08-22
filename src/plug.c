@@ -7,8 +7,8 @@
 #include <string.h>
 #include <rlgl.h>
 #include "config.h"
+#include "tinyfiledialogs.h"
 
-// TODO: Not memory safe
 static Plug *g_plug = NULL;
 static float volume_fade = 0.0f;
 static float time_fade = 0.0f;
@@ -145,7 +145,17 @@ void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D p
         Vector2 position = {(GetScreenWidth() - tw) / 2, GetScreenHeight()/2 - 60 };
         DrawTextEx(font, msg, position, font_size, font_space, WHITE);
         DrawTexture(penger_texture, GetScreenWidth() / 2, GetScreenHeight() /2, LIGHTGRAY);
-        
+
+        // Tinyfile dialog
+
+        if ((IsMouseButtonPressed(MOUSE_BUTTON_LEFT))) {
+            const char *file_music_path = tinyfd_openFileDialog("Music" , ".", 0, NULL, "Music-File", 0);
+            append_String_DA(music_path, file_music_path);
+            plug->music[*file_counter] = LoadMusicStream(get_String_DA(music_path, *file_counter));
+            (*file_counter)++;
+        }
+            
+        // Drag and drop
         if (IsFileDropped()) {
             FilePathList dropped_files = LoadDroppedFiles();
             for(int i = 0; i < (int)dropped_files.count; ++i) {
@@ -156,7 +166,7 @@ void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D p
                 }
             }
             UnloadDroppedFiles(dropped_files);
-        }
+        } 
     }
 }
 
@@ -367,6 +377,15 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
             volume = 0.0f;
         }
         else volume = state;
+    }
+
+    float skip_rate = 5.0f;
+    if (IsKeyPressed(KEY_RIGHT)){
+        SeekMusicStream(plug->music[*item],  GetMusicTimePlayed(plug->music[*item]) + skip_rate);
+    }
+
+    if (IsKeyPressed(KEY_LEFT)){
+        SeekMusicStream(plug->music[*item],  GetMusicTimePlayed(plug->music[*item]) - skip_rate);
     }
     
     if (IsKeyPressed(KEY_N) && *file_counter > 0) {
