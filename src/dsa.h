@@ -13,7 +13,7 @@ typedef struct { \
     size_t capacity; \
 } name##_DA; \
 \
-name##_DA* init_##name##_dynamic_array(size_t initial_capacity) { \
+static inline name##_DA* init_##name##_dynamic_array(size_t initial_capacity) { \
     name##_DA *array = (name##_DA *)malloc(sizeof(name##_DA)); \
     array->data = (type *)malloc(initial_capacity * sizeof(type)); \
     array->size = 0; \
@@ -21,7 +21,7 @@ name##_DA* init_##name##_dynamic_array(size_t initial_capacity) { \
     return array; \
 } \
 \
-void append_##name##_DA(name##_DA *array, type value) { \
+static inline void append_##name##_DA(name##_DA *array, type value) { \
     if(array->size >= array->capacity) { \
         array->capacity *= 2; \
         array->data = (type *)realloc(array->data, array->capacity * sizeof(type)); \
@@ -29,7 +29,7 @@ void append_##name##_DA(name##_DA *array, type value) { \
     array->data[array->size++] = value; \
 } \
 \
-type get_##name##_DA(name##_DA* array, size_t index) { \
+static inline type get_##name##_DA(name##_DA* array, size_t index) { \
     if(index < array->size) { \
         return array->data[index]; \
     } else { \
@@ -38,7 +38,7 @@ type get_##name##_DA(name##_DA* array, size_t index) { \
     } \
 } \
 \
-void remove_##name##_DA(name##_DA *array, size_t index) { \
+static inline void remove_##name##_DA(name##_DA *array, size_t index) { \
     if(index < array->size) { \
         memmove(&array->data[index], &array->data[index+1], (array->size - 1 - index) * sizeof(type)); \
         array->size--; \
@@ -47,7 +47,7 @@ void remove_##name##_DA(name##_DA *array, size_t index) { \
     } \
 } \
 \
-void free_##name##_DA(name##_DA *array) { \
+static inline void free_##name##_DA(name##_DA *array) { \
     free(array->data); \
     free(array); \
 }

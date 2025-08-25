@@ -49,7 +49,7 @@ float text_height_raylib(qui_Context *ctx, const char *text)
     return 16.0f;
 }
 
-void fft(float in[], int s, float complex out[], int n)
+static void fft(float in[], int s, float complex out[], int n)
 {
     assert(n > 0);
     
@@ -69,7 +69,7 @@ void fft(float in[], int s, float complex out[], int n)
     }
 }
 
-float amp(float complex n)
+static float amp(float complex n)
 {
     return sqrtf(crealf(n)*crealf(n) + cimagf(n)*cimagf(n));
 }
@@ -122,7 +122,7 @@ void callback(void *buffer, unsigned int frames)
     }
 }
 
-void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D penger_texture, Font font,qui_Context *ctx)
+void plug_init(Plug *plug, Ui *ui, qui_Context *ctx)
 {
     g_plug = plug;
     
@@ -137,32 +137,32 @@ void plug_init(Plug *plug, String_DA *music_path, int *file_counter, Texture2D p
     ctx->text_width = text_width_raylib;
     ctx->text_height = text_height_raylib;
     
-    if (*file_counter == 0) {
+    if (ui->file_counter == 0) {
         const char *msg = "Drag Or\n Drop \n Music";
         int tw = MeasureText("Drag Or", 40);
         float font_size = 40;
         float font_space = 2;
         Vector2 position = {(GetScreenWidth() - tw) / 2, GetScreenHeight()/2 - 60 };
-        DrawTextEx(font, msg, position, font_size, font_space, WHITE);
-        DrawTexture(penger_texture, GetScreenWidth() / 2, GetScreenHeight() /2, LIGHTGRAY);
+        DrawTextEx(ui->font, msg, position, font_size, font_space, WHITE);
+        DrawTexture(ui->texture, GetScreenWidth() / 2, GetScreenHeight() /2, LIGHTGRAY);
 
         // Tinyfile dialog
 
         if ((IsMouseButtonPressed(MOUSE_BUTTON_LEFT))) {
             const char *file_music_path = tinyfd_openFileDialog("Music" , ".", 0, NULL, "Music-File", 0);
-            append_String_DA(music_path, file_music_path);
-            plug->music[*file_counter] = LoadMusicStream(get_String_DA(music_path, *file_counter));
-            (*file_counter)++;
+            append_String_DA(ui->music_path, strdup(file_music_path));
+            plug->music[ui->file_counter] = LoadMusicStream(get_String_DA(ui->music_path, ui->file_counter));
+            ui->file_counter++;
         }
             
         // Drag and drop
         if (IsFileDropped()) {
             FilePathList dropped_files = LoadDroppedFiles();
             for(int i = 0; i < (int)dropped_files.count; ++i) {
-                if(*file_counter < (MAX - 1)) {
-                    append_String_DA(music_path, strdup(dropped_files.paths[i]));
-                    plug->music[*file_counter] = LoadMusicStream(get_String_DA(music_path, *file_counter));
-                    (*file_counter)++;
+                if(ui->file_counter < (MAX - 1)) {
+                    append_String_DA(ui->music_path, strdup(dropped_files.paths[i]));
+                    plug->music[ui->file_counter] = LoadMusicStream(get_String_DA(ui->music_path, ui->file_counter));
+                    ui->file_counter++;
                 }
             }
             UnloadDroppedFiles(dropped_files);
@@ -220,7 +220,7 @@ void draw_frequency_bars(Plug *plug, int screen_width, int screen_height, int cu
     }
 }
 
-void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item, bool *requested, Font font,qui_Context *ctx)
+void plug_update(Plug *plug, Ui *ui, qui_Context *ctx)
 {
     Vector2 mouse_pos = GetMousePosition();
     qui_mouse_move(ctx, (int)mouse_pos.x, (int)mouse_pos.y);
@@ -234,54 +234,54 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
 
     qui_begin(ctx, 20.0f, 50.0f);
     
-    if (*item >= *file_counter) *item = 0;
+    if (ui->item >= ui->file_counter) ui->item = 0;
 
-    if (!(*requested) && (*file_counter) > 0) {
+    if (!(ui->requested) && (ui->file_counter) > 0) {
         
-        AttachAudioStreamProcessor(plug->music[*item].stream, callback);
+        AttachAudioStreamProcessor(plug->music[ui->item].stream, callback);
         
-        if (!IsMusicStreamPlaying(plug->music[*item])) {
-            PlayMusicStream(plug->music[*item]);
+        if (!IsMusicStreamPlaying(plug->music[ui->item])) {
+            PlayMusicStream(plug->music[ui->item]);
         }
-        *requested = true;
+        ui->requested = true;
     }
     
-    if (*file_counter > 0) {
-        UpdateMusicStream(plug->music[*item]);
+    if (ui->file_counter > 0) {
+        UpdateMusicStream(plug->music[ui->item]);
     }
     
     if (IsFileDropped()) {
-        *requested = false;
+        ui->requested = false;
         FilePathList dropped_files = LoadDroppedFiles();
         
         for(int i = 0; i < (int)dropped_files.count; ++i) {
-            if(*file_counter < MAX - 1) {
-                append_String_DA(music_path, strdup(dropped_files.paths[i]));
-                plug->music[*file_counter] = LoadMusicStream(get_String_DA(music_path, *file_counter));
-                (*file_counter)++;
+            if(ui->file_counter < MAX - 1) {
+                append_String_DA(ui->music_path, strdup(dropped_files.paths[i]));
+                plug->music[ui->file_counter] = LoadMusicStream(get_String_DA(ui->music_path, ui->file_counter));
+                ui->file_counter;
             }
         }
         UnloadDroppedFiles(dropped_files);
-        if (*file_counter > 0) {
-            DetachAudioStreamProcessor(plug->music[*item].stream, callback);
+        if (ui->file_counter > 0) {
+            DetachAudioStreamProcessor(plug->music[ui->item].stream, callback);
         }
     }
     
-    if (*file_counter > 0) {
-        float elapsed = GetMusicTimePlayed(plug->music[*item]);            
-        float length = GetMusicTimeLength(plug->music[*item]);
+    if (ui->file_counter > 0) {
+        float elapsed = GetMusicTimePlayed(plug->music[ui->item]);            
+        float length = GetMusicTimeLength(plug->music[ui->item]);
         if (elapsed >= length) {
-            (*item)++;
-            if (*item >= *file_counter) *item = 0;
-            *requested = false;
+            ui->item++;
+            if (ui->item >= ui->file_counter) ui->item = 0;
+            ui->requested = false;
         }
 
-        if(IsMusicValid(plug->music[*item])) {
+        if(IsMusicValid(plug->music[ui->item])) {
             float slider_y = (float)GetScreenHeight() - 60.0f;
             float hover_area_height = 35.0f;
             float fade_speed = 8.0f * GetFrameTime();
             
-            float volume_x = (float)GetScreenWidth() - 320.0f;
+            float volume_x = (float)GetScreenWidth() - (float)GetScreenWidth()/5;
             float volume_w = 250.0f;
             float time_x = 20.0f;
             float time_w = 800.0f;
@@ -314,14 +314,14 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
             Color text_color = {200, 200, 200, (unsigned char)(100 + 155 * (1.0f - volume_fade))};
             float txt_font_size = 20.0f;
             float txt_font_space = 2.0f;
-            if (!IsMusicStreamPlaying(plug->music[*item])) color = GRAY;
+            if (!IsMusicStreamPlaying(plug->music[ui->item])) color = GRAY;
             if (volume_fade > 0.1f) {
-                ctx->cursor_x = volume_x - 55;
+                ctx->cursor_x = volume_x - 25;
                 ctx->cursor_y = (int)slider_y + 10;
                 qui_slider_float(ctx, "Vol", &volume, 0.0f, 1.0f, 200.0f);
             } else {
                 Vector2 vol_pos = {(int)(volume_x + 1), (int)(slider_y + 8) };
-                DrawTextEx(font,"Vol", vol_pos , txt_font_size, txt_font_space, text_color);
+                DrawTextEx(ui->font,"Vol", vol_pos , txt_font_size, txt_font_space, text_color);
                 
                 int vol_bar_width = (int)(30 * volume);
                 DrawRectangle((int)(volume_x + 35), (int)(slider_y + (int)txt_font_size - 3), vol_bar_width, 4, color);
@@ -330,7 +330,7 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
 
             // TODO: Add slider for time
             Vector2 time_pos = {(int)(time_x + 5), (int)(slider_y + 8) };
-            DrawTextEx(font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
+            DrawTextEx(ui->font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
             
             float progress = (length > 0) ? (elapsed / length) : 0.0f;
             int progress_width = (int)(200 * progress);
@@ -345,19 +345,19 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
             int length_min = (int)(length) / 60;
             int length_sec = (int)(length) % 60;
 
-            DrawTextEx(font, TextFormat("%02d:%02d / %02d:%02d", elapsed_min, elapsed_sec, length_min, length_sec), pos, time_font_size, time_font_space, text_color);
+            DrawTextEx(ui->font, TextFormat("%02d:%02d / %02d:%02d", elapsed_min, elapsed_sec, length_min, length_sec), pos, time_font_size, time_font_space, text_color);
         }
     }
     
-    if (*file_counter > 0) {
-        SetMusicVolume(plug->music[*item], volume);
+    if (ui->file_counter > 0) {
+        SetMusicVolume(plug->music[ui->item], volume);
     }
 
-    if (IsKeyPressed(KEY_SPACE) && *file_counter > 0) {
-        if(IsMusicStreamPlaying(plug->music[(*item)])) {
-            PauseMusicStream(plug->music[(*item)]);
+    if (IsKeyPressed(KEY_SPACE) && ui->file_counter > 0) {
+        if(IsMusicStreamPlaying(plug->music[(ui->item)])) {
+            PauseMusicStream(plug->music[(ui->item)]);
         } else {
-            ResumeMusicStream(plug->music[(*item)]); 
+            ResumeMusicStream(plug->music[(ui->item)]); 
         }
     }
 
@@ -381,33 +381,33 @@ void plug_update(Plug *plug, String_DA *music_path, int *file_counter, int *item
 
     float skip_rate = 5.0f;
     if (IsKeyPressed(KEY_RIGHT)){
-        SeekMusicStream(plug->music[*item],  GetMusicTimePlayed(plug->music[*item]) + skip_rate);
+        SeekMusicStream(plug->music[ui->item],  GetMusicTimePlayed(plug->music[ui->item]) + skip_rate);
     }
 
     if (IsKeyPressed(KEY_LEFT)){
-        SeekMusicStream(plug->music[*item],  GetMusicTimePlayed(plug->music[*item]) - skip_rate);
+        SeekMusicStream(plug->music[ui->item],  GetMusicTimePlayed(plug->music[ui->item]) - skip_rate);
     }
     
-    if (IsKeyPressed(KEY_N) && *file_counter > 0) {
-        DetachAudioStreamProcessor(plug->music[*item].stream, callback);
-        (*item)++;
-        if (*item >= *file_counter) *item = 0;
-        *requested = false;
+    if (IsKeyPressed(KEY_N) && ui->file_counter > 0) {
+        DetachAudioStreamProcessor(plug->music[ui->item].stream, callback);
+        ui->item++;
+        if (ui->item >= ui->file_counter) ui->item = 0;
+        ui->requested = false;
     }
 
     int w = GetRenderWidth();
     int h = GetRenderHeight();
 
-    draw_frequency_bars(plug, w, h, *item);
+    draw_frequency_bars(plug, w, h, ui->item);
 
-    if (*file_counter > 0) {
+    if (ui->file_counter > 0) {
         int x = 26;
         int y = h - 90;
         float fontsize = 20.0f;
         
-        const char *current_file = get_String_DA(music_path, *item);
+        const char *current_file = get_String_DA(ui->music_path, ui->item);
         Vector2 pos = { x , y };
-        DrawTextEx(font, TextFormat("Playing: %s", current_file) , pos, fontsize, 2.0f, WHITE);
+        DrawTextEx(ui->font, TextFormat("Playing: %s", current_file) , pos, fontsize, 2.0f, WHITE);
     }
     
     qui_end(ctx);

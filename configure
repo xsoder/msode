@@ -36,13 +36,11 @@ get_deps() {
 						fi
 				done
 
-				printf "%s All download attempts completed.\n" "$LOG"
 		else
 				printf "%s %s directory exists exitting ...\n" "$WARNING" "$DEPS"
 				exit
 		fi
 }
-
 
 extarct_file() {
 		for file in *; do

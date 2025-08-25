@@ -23,8 +23,16 @@ typedef struct {
     Music music[MAX];
 } Plug;
 
-typedef void (*plug_init_t)(Plug *plug, String_DA *music_path, int *file_counter, Texture2D texture, Font font,qui_Context *ctx);
-typedef void (*plug_update_t)(Plug *plug, String_DA *music_path, int *file_counter, int *item, bool *requested, Font font,qui_Context *ctx);
+typedef struct {
+    String_DA *music_path;
+    int file_counter;
+    Texture2D texture;
+    Font font;
+    int item;
+    bool requested;
+} Ui;
+
+typedef void (*plug_init_t)(Plug *plug, Ui *ui, qui_Context *ctx);
+typedef void (*plug_update_t)(Plug *plug, Ui *ui, qui_Context *ctx);
 
 #endif // PLUG_H
-
