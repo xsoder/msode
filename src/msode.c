@@ -11,6 +11,8 @@
 #include "config.h"
 #include "hotreload.h"
 
+#include <dlfcn.h>
+
 typedef struct {
     int width;
     int height;
