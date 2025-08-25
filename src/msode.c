@@ -1,4 +1,3 @@
-#include <dlfcn.h>
 #include "plug.h"
 #include "dsa.h"
 #include <stdio.h>
@@ -10,6 +9,8 @@
 #include <complex.h>
 #include "quickui.h"
 #include "config.h"
+
+#include <dlfcn.h>
 
 typedef struct {
     int width;
