@@ -1,4 +1,5 @@
 #include "hotreload.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <dlfcn.h>
@@ -11,6 +12,7 @@ plug_init_t plug_init = NULL;
 
 bool reload_libplug(void)
 {
+    #ifdef ENABLE_HOT_RELOAD
     if (libplug != NULL) dlclose(libplug);
     libplug = dlopen(lib_name, RTLD_NOW);
     if (libplug == NULL) {
@@ -30,4 +32,5 @@ bool reload_libplug(void)
         return false;
     }
     return true;
+    #endif //CONFIG_H
 }
