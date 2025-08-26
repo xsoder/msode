@@ -9,8 +9,7 @@
 #include <complex.h>
 #include "quickui.h"
 #include "config.h"
-
-#include <dlfcn.h>
+#include "hotreload.h"
 
 typedef struct {
     int width;
@@ -19,36 +18,8 @@ typedef struct {
 } Win;
 
 Plug plug = {0};
+Ui ui = {0};
 qui_Context ctx = {0};
-
-const char *lib_name = "libplug.so";
-void *libplug = NULL;
-
-plug_update_t plug_update = NULL;
-plug_init_t plug_init = NULL;
-
-bool reload_libplug(void)
-{
-    if (libplug != NULL) dlclose(libplug);
-    libplug = dlopen(lib_name, RTLD_NOW);
-    if (libplug == NULL) {
-        fprintf(stderr, "Could not load %s because of this %s\n", lib_name, dlerror());
-        return false;
-    }
-    
-    plug_init = dlsym(libplug, "plug_init");
-    if (plug_init == NULL) {
-        fprintf(stderr, "Could not find plug_init in library %s error: %s\n", lib_name, dlerror());
-        return false;
-    }
-    
-    plug_update = dlsym(libplug, "plug_update");
-    if (plug_update == NULL) {
-        fprintf(stderr, "Could not find plug_update in library %s error: %s\n", lib_name, dlerror());
-        return false;
-    }
-    return true;
-}
 
 int main(void)
 {
@@ -58,67 +29,65 @@ int main(void)
     win.height = 900;
     win.title = "Msode";
 
-    int file_counter = 0;
-    int item = 0;
-    bool requested = false;
+    ui.file_counter = 0;
+    ui.item = 0;
+    ui.requested = false;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(win.width, win.height, win.title);
-    Font font = LoadFont(FONT);
+    ui.font = LoadFont(FONT);
     int font_size = 18;
     int font_spacing = 1;
     InitAudioDevice();
     SetTraceLogLevel(LOG_NONE);
     SetTargetFPS(60);
     
-    String_DA *music_path = init_String_dynamic_array(2);
+    ui.music_path = init_String_dynamic_array(2);
     Image penger = LoadImage("resources/penger.png");
     ImageResize(&penger, 150, 150);
-    Texture2D penger_texture = LoadTextureFromImage(penger);
+    ui.texture = LoadTextureFromImage(penger);
 
     // TODO: system wide font install
 
     qui_init(&ctx, NULL);
-    qui_set_font(&ctx, &font, font_size, font_spacing);
+    qui_set_font(&ctx, &ui.font, font_size, font_spacing);
         
     while (!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(BG_COLOR);
 
-        if (file_counter == 0) {
-            plug_init(&plug, &ui, &ctx);
-        }
+        plug_init(&plug, &ui, &ctx);
         
         if(IsKeyPressed(KEY_R)) {
             bool was_playing = false;
-            if (file_counter > 0 && requested) {
-                was_playing = IsMusicStreamPlaying(plug.music[item]);
-                DetachAudioStreamProcessor(plug.music[item].stream, NULL);
-                requested = false;
+            if (ui.file_counter > 0 && ui.requested) {
+                was_playing = IsMusicStreamPlaying(plug.music[ui.item]);
+                DetachAudioStreamProcessor(plug.music[ui.item].stream, NULL);
+                ui.requested = false;
             }
             
             if(!reload_libplug()) return 1;
             
-            plug_init(&plug, music_path, &file_counter, penger_texture, font, &ctx);
+            plug_init(&plug, &ui, &ctx);
             
-            if (file_counter > 0) {
-                requested = false;
+            if (ui.file_counter > 0) {
+                ui.requested = false;
             }
         }
 
-        plug_update(&plug, music_path, &file_counter, &item, &requested, font, &ctx);
+        plug_update(&plug, &ui, &ctx);
 
         EndDrawing();
     }
     
-    for (int i = 0; i < file_counter; i++) {
+    for (int i = 0; i < ui.file_counter; i++) {
         if (plug.music[i].stream.buffer != NULL) {
             DetachAudioStreamProcessor(plug.music[i].stream, NULL);
             UnloadMusicStream(plug.music[i]);
         }
     }
     
-    if (music_path) free_String_DA(music_path);
+    if (ui.music_path) free_String_DA(ui.music_path);
 
     CloseAudioDevice();
     CloseWindow();

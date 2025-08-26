@@ -16,8 +16,6 @@ static const char *compiler = "gcc";
 static const char *compiler = "x86_64-w64-mingw32-gcc";
 #endif
 
-
-
 int main(int argc, char **argv)
 {
     NOB_GO_REBUILD_URSELF(argc, argv);
@@ -29,14 +27,14 @@ int main(int argc, char **argv)
     #endif
     
     if(!nob_mkdir_if_not_exists(BUILD)) 
-    nob_log(NOB_ERROR, "Could not create directory");
+        nob_log(NOB_ERROR, "Could not create directory");
 
     #if ENABLE_HOT_RELOAD
     static const char *lib = "build/libplug.so";
     #else
     static const char *obj = "build/libplug.o";
     static const char *lib = "build/libplug.a";
-    #endif //CONFIG_H
+    #endif 
     static const char *exe = "build/msode";
 
     #if PLATFORM_LINUX
@@ -47,21 +45,6 @@ int main(int argc, char **argv)
     static const char *ar_flag="rsc";
     #endif
 
-    // BUILDING LIB-PLUG
-<<<<<<< HEAD
-    cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-ggdb", "-Ideps/quickui/src", "-Ideps/tinyfiledialog","-fPIC", "-shared", "-o", lib,  "./deps/tinyfiledialog/tinyfiledialogs.c", "./deps/quickui/src/quickui.c","./src/plug.c");
-    cmd_append(&cmd, "-Ideps/raylib/include");
-    cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-lraylib", "-ldl");
-    if (!cmd_run(&cmd)) return 1;
-
-    // BUILDING THE PROJECT
-    cmd_append(&cmd, "cc", "-Wall","-Wextra", "-ggdb", "-Ideps/quickui/src","-o", exe, "./deps/quickui/src/quickui.c", "./src/msode.c");
-    cmd_append(&cmd, "./src/hotreload-linux.c");
-    cmd_append(&cmd, "-Ideps/raylib/include");
-    cmd_append(&cmd, "-Ldeps/raylib/lib", "-lm", "-lraylib", "-ldl");
-    cmd_append(&cmd, "-Lbuild/");
-    if (!cmd_run(&cmd)) return 1;
-=======
     #if PLATFORM_LINUX
     static const char *raylib = "-Ideps/raylib/include";
     #else
@@ -94,13 +77,12 @@ int main(int argc, char **argv)
     if (!nob_cmd_run(&cmd)) return 1;
     #endif
 
-    // BUILDING
+    // BUILDING MAIN EXECUTABLE
     nob_cmd_append(&cmd, compiler,
         gdb,
         "-Wall",
         "-Wextra",
     );
-        
     nob_cmd_append(&cmd, "-Ideps/quickui/src", raylib);
     nob_cmd_append(&cmd, "-c", "./src/msode.c", "-o", "build/msode.o");
     if (!nob_cmd_run(&cmd)) return 1;
@@ -110,8 +92,8 @@ int main(int argc, char **argv)
         "-Wall",
         "-Wextra",
     );
-        
     nob_cmd_append(&cmd, "-Ideps/quickui/src", raylib);
+
     #if PLATFORM_LINUX
     const char *hot_reload = "./src/hotreload-linux.c";
     static const char *hot_obj = "build/hotreload-linux.o";
@@ -123,7 +105,7 @@ int main(int argc, char **argv)
     nob_cmd_append(&cmd, "-c", hot_reload, "-o", hot_obj);
     if (!nob_cmd_run(&cmd)) return 1;
 
-    // link
+    // LINK
     #if STATIC_BUILD
     const char *plug_lib =  "-l:libplug.a";
     const char *ray_lib =  "-l:libraylib.a";
@@ -139,16 +121,16 @@ int main(int argc, char **argv)
     );
         
     #if PLATFORM_LINUX
-         nob_cmd_append(&cmd, "-O2",
-         "-o",
-         exe,
-         "build/msode.o",
-         "build/hotreload-linux.o",
-         "-Lbuild",
-         "-Ldeps/raylib/lib",
-         plug_lib,
-         ray_lib,
-         "-lm");
+    nob_cmd_append(&cmd, "-O2",
+        "-o",
+        exe,
+        "build/msode.o",
+        "build/hotreload-linux.o",
+        "-Lbuild",
+        "-Ldeps/raylib/lib",
+        plug_lib,
+        ray_lib,
+        "-lm");
     #else
     nob_cmd_append(&cmd, "-static", "-O2",
         "-o",
@@ -170,10 +152,8 @@ int main(int argc, char **argv)
         "-lglu32",
         "-Wl,-subsystem,console");
     #endif    
+
     if (!nob_cmd_run(&cmd)) return 1;
->>>>>>> migrate
 
     return 0;
-
-
 }
