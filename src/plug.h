@@ -1,14 +1,15 @@
 #ifndef PLUG_H
 #define PLUG_H
 
-#include <raylib.h>
+#include "raylib.h"
+
 #include <complex.h>
 #include "dsa.h"
 #include "quickui.h"
 
 DECLARE_DA(const char*, String)
 
-#define N 256
+#define PLUG_BUF_N 8192
 #define MAX 200
 
 typedef struct {
@@ -17,8 +18,8 @@ typedef struct {
 } Frame;
 
 typedef struct {
-    float in[N];
-    float complex out[N];
+    float in[PLUG_BUF_N];
+    float complex out[PLUG_BUF_N];
     float max_amp;
     Music music[MAX];
 } Plug;
@@ -34,5 +35,8 @@ typedef struct {
 
 typedef void (*plug_init_t)(Plug *plug, Ui *ui, qui_Context *ctx);
 typedef void (*plug_update_t)(Plug *plug, Ui *ui, qui_Context *ctx);
+
+void plug_init_imp(Plug *plug, Ui *ui, qui_Context *ctx);
+void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx);
 
 #endif // PLUG_H

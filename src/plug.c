@@ -7,7 +7,6 @@
 #include <string.h>
 #include <rlgl.h>
 #include "config.h"
-#include "tinyfiledialogs.h"
 
 static Plug *g_plug = NULL;
 static float volume_fade = 0.0f;
@@ -48,6 +47,7 @@ float text_height_raylib(qui_Context *ctx, const char *text)
 {
     return 16.0f;
 }
+ 
 
 static void fft(float in[], int s, float complex out[], int n)
 {
@@ -78,12 +78,9 @@ void callback(void *buffer, unsigned int frames)
 {
     if (g_plug == NULL) return;
     
-    static unsigned long long call_count = 0;
-    static float sample_buffer[N];
+    static float sample_buffer[PLUG_BUF_N];
     static int buffer_pos = 0;
     static int initialized = 0;
-    
-    call_count++;
     
     if (!initialized) {
         memset(sample_buffer, 0, sizeof(sample_buffer));
@@ -92,44 +89,50 @@ void callback(void *buffer, unsigned int frames)
     }
 
     Frame *fs = (Frame *)buffer;
+    if (!fs) return;
 
     for (unsigned int i = 0; i < frames; i++) {
         sample_buffer[buffer_pos] = fs[i].left;
-        buffer_pos = (buffer_pos + 1) % N;
+        buffer_pos = (buffer_pos + 1) % PLUG_BUF_N;
         
-        if (buffer_pos % (N/4) == 0) {
-            float ordered_buffer[N];
+        if (buffer_pos % (PLUG_BUF_N/8) == 0) {  
+            float ordered_buffer[PLUG_BUF_N];
             
-            for (int j = 0; j < N; j++) {
-                int idx = (buffer_pos + j) % N;
+            for (int j = 0; j < PLUG_BUF_N; j++) {
+                int idx = (buffer_pos + j) % PLUG_BUF_N;
                 ordered_buffer[j] = sample_buffer[idx];
             }
             
-            // Apply Hann window
-            for (int k = 0; k < N; k++) {
-                float w = 0.5f * (1.0f - cosf(2.0f * PI * k / (N - 1)));
+            for (int k = 0; k < PLUG_BUF_N; k++) {
+                float w = 0.5f * (1.0f - cosf(2.0f * PI * k / (PLUG_BUF_N - 1)));
                 g_plug->in[k] = ordered_buffer[k] * w;
             }
 
-            fft(g_plug->in, 1, g_plug->out, N);
+            fft(g_plug->in, 1, g_plug->out, PLUG_BUF_N);
 
             g_plug->max_amp = 0.0f;
-            for (int k = 1; k < N/2; k++) {
+            for (int k = 1; k < PLUG_BUF_N/2; k++) {
                 float a = amp(g_plug->out[k]);
-                if (a > g_plug->max_amp) g_plug->max_amp = a;
+                if (a > g_plug->max_amp) {
+                    g_plug->max_amp = a;
+                }
             }
         }
     }
 }
 
-void plug_init(Plug *plug, Ui *ui, qui_Context *ctx)
+void plug_init_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 {
     g_plug = plug;
     
-    plug->max_amp = 0.0f;
-    for (int i = 0; i < N; i++) {
-        plug->in[i] = 0.0f;
-        plug->out[i] = 0.0f + 0.0f*I;
+    static int fft_initialized = 0;
+    if (!fft_initialized) {
+        plug->max_amp = 0.0f;
+        for (int i = 0; i < PLUG_BUF_N; i++) {
+            plug->in[i] = 0.0f;
+            plug->out[i] = 0.0f + 0.0f*I;
+        }
+        fft_initialized = 1;
     }
 
     ctx->draw_rect = draw_rect_raylib;
@@ -146,16 +149,6 @@ void plug_init(Plug *plug, Ui *ui, qui_Context *ctx)
         DrawTextEx(ui->font, msg, position, font_size, font_space, WHITE);
         DrawTexture(ui->texture, GetScreenWidth() / 2, GetScreenHeight() /2, LIGHTGRAY);
 
-        // Tinyfile dialog
-
-        if ((IsMouseButtonPressed(MOUSE_BUTTON_LEFT))) {
-            const char *file_music_path = tinyfd_openFileDialog("Music" , ".", 0, NULL, "Music-File", 0);
-            append_String_DA(ui->music_path, strdup(file_music_path));
-            plug->music[ui->file_counter] = LoadMusicStream(get_String_DA(ui->music_path, ui->file_counter));
-            ui->file_counter++;
-        }
-            
-        // Drag and drop
         if (IsFileDropped()) {
             FilePathList dropped_files = LoadDroppedFiles();
             for(int i = 0; i < (int)dropped_files.count; ++i) {
@@ -170,57 +163,82 @@ void plug_init(Plug *plug, Ui *ui, qui_Context *ctx)
     }
 }
 
-void draw_frequency_bars(Plug *plug, int screen_width, int screen_height, int current_item)
-{
-    if (current_item < 0 || !IsMusicValid(plug->music[current_item])) return;
-    
-    float sample_rate = 44100.0f;
-    float freq_resolution = sample_rate / N;
-    
-    float min_freq = 20.0f;
-    float max_freq = 20000.0f; 
-    
-    int num_bars = N/2 - 1;
-    float total_width = (float)screen_width;
-    float bar_spacing = 2.0f;
-    float bar_width = total_width / num_bars;
-    
-    if (bar_width < 1.0f) {
-        bar_width = 1.0f;
-        bar_spacing = fmaxf((total_width - (bar_width * num_bars)) / (num_bars - 1), 0.0f);
-    }
-    
-    int bar_count = 0;
-    for (int i = 1; i < N/2; i++) { 
-        float frequency = i * freq_resolution;
-        
-        if (frequency < min_freq || frequency > max_freq) continue;
-        
-        float amplitude = 0.0f;
-        if (plug->max_amp > 0.0f) {
-            amplitude = amp(plug->out[i]) / plug->max_amp;
-        }
-        
-        // Apply logarithmic scaling
-        float log_amplitude = log10f(1.0f + amplitude * 9.0f); 
-        
-        float bar_height = fmaxf(log_amplitude * screen_height * 0.7f, 2.0f);
 
-        int panel = 100;
-        int x = bar_count * (bar_width + bar_spacing);
-        int y = screen_height - bar_height - panel;
-        
-        float hue = fminf((log10f(frequency) - log10f(min_freq)) / (log10f(max_freq) - log10f(min_freq)) * 270.0f, 270.0f);
-        Color color = ColorFromHSV(hue, 1.0f, 1.0f);
-        
+void draw_frequency_bars_smooth(Plug *plug, int screen_width, int screen_height, int current_item)
+{
+    if (current_item < 0 || current_item >= MAX || !IsMusicValid(plug->music[current_item])) 
+        return;
+
+    static float prev_bar_height[128] = {0};
+    float dt = GetFrameTime();
+
+    float sample_rate = 44100.0f;
+    float freq_resolution = sample_rate / PLUG_BUF_N;
+
+    int panel_height = 100;
+    int num_display_bars = 64;
+    float bar_width = 5.0f;
+    float spacing = ((float)screen_width / num_display_bars) - bar_width;
+
+    float min_freq = 20.0f;
+    float max_freq = 18000.0f;
+    float log_min = log10f(min_freq);
+    float log_max = log10f(max_freq);
+    float log_range = log_max - log_min;
+
+    float bar_amplitudes[128] = {0};
+
+    for (int bin = 1; bin < PLUG_BUF_N/2; bin++) {
+        float freq = bin * freq_resolution;
+
+        freq = fmaxf(freq, min_freq);
+        freq = fminf(freq, max_freq);
+
+        float t = (log10f(freq) - log_min) / log_range;
+        float fbar = t * (num_display_bars - 1);
+        int bar_low = (int)fbar;
+        int bar_high = bar_low + 1;
+        float weight_high = fbar - bar_low;
+        float weight_low = 1.0f - weight_high;
+
+        float a = amp(plug->out[bin]);
+
+        if (bar_low >= 0 && bar_low < num_display_bars)
+            bar_amplitudes[bar_low] += a * weight_low;
+
+        if (bar_high >= 0 && bar_high < num_display_bars)
+            bar_amplitudes[bar_high] += a * weight_high;
+    }
+
+    // Draw bars
+    for (int bar = 0; bar < num_display_bars; bar++) {
+        float normalized_amplitude = (plug->max_amp > 0.0001f) ? log10f(1.0f + bar_amplitudes[bar]) / log10f(1.0f + plug->max_amp) : 0.0f;
+        if (normalized_amplitude > 1.0f) normalized_amplitude = 1.0f;
+
+        float target_height = sqrtf(normalized_amplitude) * (screen_height - panel_height) * 0.8f;
+        prev_bar_height[bar] += (target_height - prev_bar_height[bar]) * 12.0f * dt;
+        float bar_height = prev_bar_height[bar];
+        if (bar_height < 2.0f) bar_height = 2.0f;
+
+        int x = (int)(bar * (bar_width + spacing));
+        int y = screen_height - (int)bar_height - panel_height;
+
+        // Color based on frequency
+        float center_freq = powf(10.0f, log_min + ((float)bar + 0.5f) / num_display_bars * log_range);
+        float hue;
+        if (center_freq < 250.0f) hue = 0.0f + (center_freq - min_freq) / (250.0f - min_freq) * 30.0f;
+        else if (center_freq < 2000.0f) hue = 30.0f + (center_freq - 250.0f) / (2000.0f - 250.0f) * 90.0f;
+        else hue = 120.0f + (center_freq - 2000.0f) / (max_freq - 2000.0f) * 120.0f;
+
+        Color color = ColorFromHSV(hue, 0.8f, 0.9f);
         if (!IsMusicStreamPlaying(plug->music[current_item])) color = GRAY;
-        
+
         DrawRectangle(x, y, (int)bar_width, (int)bar_height, color);
-        bar_count++;
     }
 }
 
-void plug_update(Plug *plug, Ui *ui, qui_Context *ctx)
+
+void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 {
     Vector2 mouse_pos = GetMousePosition();
     qui_mouse_move(ctx, (int)mouse_pos.x, (int)mouse_pos.y);
@@ -236,8 +254,7 @@ void plug_update(Plug *plug, Ui *ui, qui_Context *ctx)
     
     if (ui->item >= ui->file_counter) ui->item = 0;
 
-    if (!(ui->requested) && (ui->file_counter) > 0) {
-        
+    if (!ui->requested && ui->file_counter > 0) {
         AttachAudioStreamProcessor(plug->music[ui->item].stream, callback);
         
         if (!IsMusicStreamPlaying(plug->music[ui->item])) {
@@ -251,26 +268,28 @@ void plug_update(Plug *plug, Ui *ui, qui_Context *ctx)
     }
     
     if (IsFileDropped()) {
-        ui->requested = false;
         FilePathList dropped_files = LoadDroppedFiles();
         
         for(int i = 0; i < (int)dropped_files.count; ++i) {
             if(ui->file_counter < MAX - 1) {
                 append_String_DA(ui->music_path, strdup(dropped_files.paths[i]));
                 plug->music[ui->file_counter] = LoadMusicStream(get_String_DA(ui->music_path, ui->file_counter));
-                ui->file_counter;
+                ui->file_counter++;
             }
         }
         UnloadDroppedFiles(dropped_files);
-        if (ui->file_counter > 0) {
-            DetachAudioStreamProcessor(plug->music[ui->item].stream, callback);
+        
+        if (ui->item >= ui->file_counter && ui->file_counter > 0) {
+            ui->item = ui->file_counter - 1;
         }
     }
     
     if (ui->file_counter > 0) {
         float elapsed = GetMusicTimePlayed(plug->music[ui->item]);            
         float length = GetMusicTimeLength(plug->music[ui->item]);
+        
         if (elapsed >= length) {
+            DetachAudioStreamProcessor(plug->music[ui->item].stream, callback);
             ui->item++;
             if (ui->item >= ui->file_counter) ui->item = 0;
             ui->requested = false;
@@ -328,7 +347,6 @@ void plug_update(Plug *plug, Ui *ui, qui_Context *ctx)
                 DrawRectangleLines((int)(volume_x + 35), (int)(slider_y + (int)txt_font_size - 3), vol_bar_width, 4, GRAY);
             }
 
-            // TODO: Add slider for time
             Vector2 time_pos = {(int)(time_x + 5), (int)(slider_y + 8) };
             DrawTextEx(ui->font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
             
@@ -398,7 +416,7 @@ void plug_update(Plug *plug, Ui *ui, qui_Context *ctx)
     int w = GetRenderWidth();
     int h = GetRenderHeight();
 
-    draw_frequency_bars(plug, w, h, ui->item);
+    draw_frequency_bars_smooth(plug, w, h, ui->item);
 
     if (ui->file_counter > 0) {
         int x = 26;
