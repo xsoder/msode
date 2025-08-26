@@ -86,7 +86,7 @@ int main(void)
         ClearBackground(BG_COLOR);
 
         if (file_counter == 0) {
-            plug_init(&plug, music_path, &file_counter, penger_texture, font,&ctx);
+            plug_init(&plug, &ui, &ctx);
         }
         
         if(IsKeyPressed(KEY_R)) {
