@@ -19,128 +19,128 @@ RAYLIB_DIR="raylib"
 QUICKUI_DIR="quickui"
 
 get_deps() {
-		if [ ! -d "$DEPS" ]; then
-				printf "%s Directory %s does not exist. Creating directory\n" "$ERROR" "$DEPS"
-				mkdir "$DEPS"
-				printf "%s Going into %s directory\n" "$LOG" "$DEPS"
-				cd "$DEPS" || { printf "%s Failed to change directory to %s\n" "$ERROR" "$DEPS"; return 1; }
+	if [ ! -d "$DEPS" ]; then
+		printf "%s Directory %s does not exist. Creating directory\n" "$ERROR" "$DEPS"
+		mkdir "$DEPS"
+		printf "%s Going into %s directory\n" "$LOG" "$DEPS"
+		cd "$DEPS" || { printf "%s Failed to change directory to %s\n" "$ERROR" "$DEPS"; return 1; }
 
-				printf "%s STARTING DEPENDENCY DOWNLOAD\n" "$LOG"
+		printf "%s STARTING DEPENDENCY DOWNLOAD\n" "$LOG"
 
-				for url in "$raylib_url_linux" "$raylib_url_window" "$tiny_file_h" "$tiny_file_c" "$quick_ui_url"; do
-						if ! wget -q "$url"; then
-								printf "%s Failed to download from %s\n" "$ERROR" "$url"
-								echo "Failed URL: $url" >> download_errors.log  
-						else
-								printf "%s Successfully downloaded from %s\n" "$SUCCESS" "$url"
-						fi
-				done
+		for url in "$raylib_url_linux" "$raylib_url_window" "$tiny_file_h" "$tiny_file_c" "$quick_ui_url"; do
+			if ! wget -q "$url"; then
+				printf "%s Failed to download from %s\n" "$ERROR" "$url"
+				echo "Failed URL: $url" >> download_errors.log  
+			else
+				printf "%s Successfully downloaded from %s\n" "$SUCCESS" "$url"
+			fi
+		done
 
-		else
-				printf "%s %s directory exists exitting ...\n" "$WARNING" "$DEPS"
-				exit
-		fi
+	else
+		printf "%s %s directory exists exitting ...\n" "$WARNING" "$DEPS"
+		exit
+	fi
 }
 
 extarct_file() {
-		for file in *; do
-				case "$file" in
-						*.tar.gz)
-								printf "%s Extracting %s...\n" "$LOG" "$file"
-								tar -xzf "$file" && printf "%s Successfully extracted %s\n" "$SUCCESS" "$file" || printf "%s Failed to extract %s\n" "$ERROR" "$file"
-								;;
-                        *.tar)
-								printf "%s Extracting %s...\n" "$LOG" "$file"
-								tar -xvf "$file" && printf "%s Successfully extracted %s\n" "$SUCCESS" "$file" || printf "%s Failed to extract %s\n" "$ERROR" "$file"
-								;;
-						*.zip)
-								printf "%s Extracting %s...\n" "$LOG" "$file"
-								unzip -q "$file" && printf "%s Successfully extracted %s\n" "$SUCCESS" "$file" || printf "%s Failed to extract %s\n" "$ERROR" "$file"
-								;;
-						*)
-								printf "%s Skipping unsupported file type: %s\n" "$WARNING" "$file"
-								;;
-				esac
-		done
+	for file in *; do
+		case "$file" in
+			*.tar.gz)
+				printf "%s Extracting %s...\n" "$LOG" "$file"
+				tar -xzf "$file" && printf "%s Successfully extracted %s\n" "$SUCCESS" "$file" || printf "%s Failed to extract %s\n" "$ERROR" "$file"
+				;;
+			*.tar)
+				printf "%s Extracting %s...\n" "$LOG" "$file"
+				tar -xvf "$file" && printf "%s Successfully extracted %s\n" "$SUCCESS" "$file" || printf "%s Failed to extract %s\n" "$ERROR" "$file"
+				;;
+			*.zip)
+				printf "%s Extracting %s...\n" "$LOG" "$file"
+				unzip -q "$file" && printf "%s Successfully extracted %s\n" "$SUCCESS" "$file" || printf "%s Failed to extract %s\n" "$ERROR" "$file"
+				;;
+			*)
+				printf "%s Skipping unsupported file type: %s\n" "$WARNING" "$file"
+				;;
+		esac
+	done
 }
 
 finalize_deps() {
-		if [ ! -d "$TINY_DIR" ]; then
-				printf "%s Directory %s does not exist. Creating directory...\n" "$LOG" "$TINY_DIR"
-				mkdir -p "$TINY_DIR" || { printf "%s Failed to create directory %s\n" "$ERROR" "$TINY_DIR"; return 1; }
+	if [ ! -d "$TINY_DIR" ]; then
+		printf "%s Directory %s does not exist. Creating directory...\n" "$LOG" "$TINY_DIR"
+		mkdir -p "$TINY_DIR" || { printf "%s Failed to create directory %s\n" "$ERROR" "$TINY_DIR"; return 1; }
 
-				if [ -f "tinyfiledialogs.h" ]; then
-						mv tinyfiledialogs.h "$TINY_DIR" || { printf "%s Failed to move tinyfiledialogs.h to %s\n" "$ERROR" "$TINY_DIR"; return 1; }
-				else
-						printf "%s tinyfiledialogs.h not found, skipping...\n" "$WARNING"
-				fi
-
-				if [ -f "tinyfiledialogs.c" ]; then
-						mv tinyfiledialogs.c "$TINY_DIR" || { printf "%s Failed to move tinyfiledialogs.c to %s\n" "$ERROR" "$TINY_DIR"; return 1; }
-				else
-						printf "%s tinyfiledialogs.c not found, skipping...\n" "$WARNING"
-				fi
+		if [ -f "tinyfiledialogs.h" ]; then
+			mv tinyfiledialogs.h "$TINY_DIR" || { printf "%s Failed to move tinyfiledialogs.h to %s\n" "$ERROR" "$TINY_DIR"; return 1; }
 		else
-				printf "%s Directory %s exists, skipping...\n" "$WARNING" "$TINY_DIR"
+			printf "%s tinyfiledialogs.h not found, skipping...\n" "$WARNING"
 		fi
 
-
-		if [ ! -d "$RAYLIB_DIR" ]; then
-				printf "%s Directory %s does not exist. Creating directory...\n" "$LOG" "$RAYLIB_DIR"
-
-				if [ -d "raylib-5.5_linux_amd64" ]; then
-						mv raylib-5.5_linux_amd64 "$RAYLIB_DIR" || { printf "%s Failed to move raylib-5.5_linux_amd64 to %s\n" "$ERROR" "$RAYLIB_DIR"; return 1; }
-						printf "%s Moved raylib-5.5_linux_amd64 to %s\n" "$SUCCESS" "$RAYLIB_DIR"
-				else
-						printf "%s raylib-5.5_linux_amd64 not found, skipping...\n" "$WARNING"
-				fi
+		if [ -f "tinyfiledialogs.c" ]; then
+			mv tinyfiledialogs.c "$TINY_DIR" || { printf "%s Failed to move tinyfiledialogs.c to %s\n" "$ERROR" "$TINY_DIR"; return 1; }
 		else
-				printf "%s Directory %s exists, skipping...\n" "$WARNING" "$RAYLIB_DIR"
+			printf "%s tinyfiledialogs.c not found, skipping...\n" "$WARNING"
 		fi
-        
-        if [ ! -d "$QUICKUI_DIR" ]; then
-			printf "%s Directory %s does not exist. Creating directory...\n" "$LOG" "$QUICKUI_DIR"
-            
-			if [ -d "dist" ]; then
-				mv dist "$QUICKUI_DIR" || { printf "%s Failed to move dist to %s\n" "$ERROR" "$QUICKUI_DIR"; return 1; }
-				printf "%s Moved dist to %s\n" "$SUCCESS" "$QUICKUI_DIR"
-			else
-				printf "%s dist is not found, skipping...\n" "$WARNING"
-			fi
+	else
+		printf "%s Directory %s exists, skipping...\n" "$WARNING" "$TINY_DIR"
+	fi
+
+
+	if [ ! -d "$RAYLIB_DIR" ]; then
+		printf "%s Directory %s does not exist. Creating directory...\n" "$LOG" "$RAYLIB_DIR"
+
+		if [ -d "raylib-5.5_linux_amd64" ]; then
+			mv raylib-5.5_linux_amd64 "$RAYLIB_DIR" || { printf "%s Failed to move raylib-5.5_linux_amd64 to %s\n" "$ERROR" "$RAYLIB_DIR"; return 1; }
+			printf "%s Moved raylib-5.5_linux_amd64 to %s\n" "$SUCCESS" "$RAYLIB_DIR"
 		else
-			printf "%s Directory %s exists, skipping...\n" "$WARNING" "$QUICKUI_DIR"
+			printf "%s raylib-5.5_linux_amd64 not found, skipping...\n" "$WARNING"
 		fi
+	else
+		printf "%s Directory %s exists, skipping...\n" "$WARNING" "$RAYLIB_DIR"
+	fi
+
+	if [ ! -d "$QUICKUI_DIR" ]; then
+		printf "%s Directory %s does not exist. Creating directory...\n" "$LOG" "$QUICKUI_DIR"
+
+		if [ -d "dist" ]; then
+			mv dist "$QUICKUI_DIR" || { printf "%s Failed to move dist to %s\n" "$ERROR" "$QUICKUI_DIR"; return 1; }
+			printf "%s Moved dist to %s\n" "$SUCCESS" "$QUICKUI_DIR"
+		else
+			printf "%s dist is not found, skipping...\n" "$WARNING"
+		fi
+	else
+		printf "%s Directory %s exists, skipping...\n" "$WARNING" "$QUICKUI_DIR"
+	fi
 }
 
 clean_downloads() {
-		printf "%s Cleaning up downloaded files...\n" "$LOG"
+	printf "%s Cleaning up downloaded files...\n" "$LOG"
 
-		if ls *.zip 1> /dev/null 2>&1; then
-				rm -f *.zip && printf "%s Removed all .zip files.\n" "$SUCCESS" || printf "%s Failed to remove .zip files.\n" "$ERROR"
-		else
-				printf "%s No .zip files found to remove.\n" "$WARNING"
-		fi
+	if ls *.zip 1> /dev/null 2>&1; then
+		rm -f *.zip && printf "%s Removed all .zip files.\n" "$SUCCESS" || printf "%s Failed to remove .zip files.\n" "$ERROR"
+	else
+		printf "%s No .zip files found to remove.\n" "$WARNING"
+	fi
 
-		if ls *.tar.gz 1> /dev/null 2>&1; then
-				rm -f *.tar.gz && printf "%s Removed all .tar.gz files.\n" "$SUCCESS" || printf "%s Failed to remove .tar.gz files.\n" "$ERROR"
-		else
-				printf "%s No .tar.gz files found to remove.\n" "$WARNING"
-		fi
+	if ls *.tar.gz 1> /dev/null 2>&1; then
+		rm -f *.tar.gz && printf "%s Removed all .tar.gz files.\n" "$SUCCESS" || printf "%s Failed to remove .tar.gz files.\n" "$ERROR"
+	else
+		printf "%s No .tar.gz files found to remove.\n" "$WARNING"
+	fi
 
-        if ls *.tar 1> /dev/null 2>&1; then
-				rm -f *.tar && printf "%s Removed all .tar files.\n" "$SUCCESS" || printf "%s Failed to remove .tar files.\n" "$ERROR"
-		else
-				printf "%s No .tar files found to remove.\n" "$WARNING"
-		fi
+	if ls *.tar 1> /dev/null 2>&1; then
+		rm -f *.tar && printf "%s Removed all .tar files.\n" "$SUCCESS" || printf "%s Failed to remove .tar files.\n" "$ERROR"
+	else
+		printf "%s No .tar files found to remove.\n" "$WARNING"
+	fi
 
-        if ls *.txt 1> /dev/null 2>&1; then
-				rm -f *.txt && printf "%s Removed all .txt files.\n" "$SUCCESS" || printf "%s Failed to remove .txt files.\n" "$ERROR"
-		else
-				printf "%s No .txt files found to remove.\n" "$WARNING"
-		fi
+	if ls *.txt 1> /dev/null 2>&1; then
+		rm -f *.txt && printf "%s Removed all .txt files.\n" "$SUCCESS" || printf "%s Failed to remove .txt files.\n" "$ERROR"
+	else
+		printf "%s No .txt files found to remove.\n" "$WARNING"
+	fi
 
 
-		printf "%s Cleanup completed.\n" "$LOG"
+	printf "%s Cleanup completed.\n" "$LOG"
 }
 
 get_deps
@@ -150,8 +150,8 @@ clean_downloads
 
 EXPORT_LINE='export LD_LIBRARY_PATH="build:deps/raylib/lib"'
 if ! grep -Fxq "$EXPORT_LINE" ~/.bashrc; then
-    echo "$EXPORT_LINE" >> ~/.bashrc
-    printf "%s Added export to ~/.bashrc\n" "$SUCCESS"
+	echo "$EXPORT_LINE" >> ~/.bashrc
+	printf "%s Added export to ~/.bashrc\n" "$SUCCESS"
 else
-    printf "%s Export already exists in ~/.bashrc, skipping...\n" "$WARNING"
+	printf "%s Export already exists in ~/.bashrc, skipping...\n" "$WARNING"
 fi

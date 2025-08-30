@@ -14,7 +14,7 @@ static float time_fade = 0.0f;
 static float button_fade = 0.0f;
 static float state = 0.0f;
 static float volume = 1.0f;
-
+float hue;
 static int qui_mouse_in_area(qui_Context *ctx, float x, float y, float w, float h) {
     int mx = ctx->mouse_pos.x;
     int my = ctx->mouse_pos.y;
@@ -177,7 +177,7 @@ void draw_frequency_bars_smooth(Plug *plug, int screen_width, int screen_height,
 
     int panel_height = 100;
     int num_display_bars = 64;
-    float bar_width = 5.0f;
+    float bar_width = 7.0f;
     float spacing = ((float)screen_width / num_display_bars) - bar_width;
 
     float min_freq = 20.0f;
@@ -225,7 +225,7 @@ void draw_frequency_bars_smooth(Plug *plug, int screen_width, int screen_height,
 
         // Color based on frequency
         float center_freq = powf(10.0f, log_min + ((float)bar + 0.5f) / num_display_bars * log_range);
-        float hue;
+
         if (center_freq < 250.0f) hue = 0.0f + (center_freq - min_freq) / (250.0f - min_freq) * 30.0f;
         else if (center_freq < 2000.0f) hue = 30.0f + (center_freq - 250.0f) / (2000.0f - 250.0f) * 90.0f;
         else hue = 120.0f + (center_freq - 2000.0f) / (max_freq - 2000.0f) * 120.0f;
@@ -329,7 +329,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
                 button_fade = fmaxf(button_fade - fade_speed, 0.0f);
             }
 
-            Color color = BLUE;
+            Color color = ColorFromHSV(hue, 0.8f, 0.9f);
             Color text_color = {200, 200, 200, (unsigned char)(100 + 155 * (1.0f - volume_fade))};
             float txt_font_size = 20.0f;
             float txt_font_space = 2.0f;

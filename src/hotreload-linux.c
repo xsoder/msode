@@ -8,8 +8,10 @@ bool reload_libplug(void)
 {
     #if ENABLE_HOT_RELOAD
     #include <dlfcn.h>
+    void *libplug = NULL;
+    static char* lib_name = "libplug.so";
         if (libplug != NULL) dlclose(libplug);
-    libplug = dlopen(lib_name, RTLD_NOW);
+        libplug = dlopen(lib_name, RTLD_NOW);
         if (libplug == NULL) {
             fprintf(stderr, "Could not load %s because of this %s\n", lib_name, dlerror());
             return false;
@@ -20,11 +22,11 @@ bool reload_libplug(void)
             fprintf(stderr, "Could not find plug_init in library %s error: %s\n", lib_name, dlerror());
             return false;
         }
-            
+        
         plug_update = dlsym(libplug, "plug_update");
         if (plug_update == NULL) {
             fprintf(stderr, "Could not find plug_update in library %s error: %s\n", lib_name, dlerror());
-            return false;
+                return false;
         }
         return true;
     #else
