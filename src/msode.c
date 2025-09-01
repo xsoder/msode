@@ -34,12 +34,21 @@ int main(void)
     ui.requested = false;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    SetTraceLogLevel(LOG_NONE);
+    
     InitWindow(win.width, win.height, win.title);
-    ui.font = LoadFont(FONT);
-    int font_size = 18;
+    ui.font = LoadFontEx("/home/xsoder/.fonts/Iosevka-Regular.ttf", 120, 0, 0); 
+    if (ui.font.texture.id == 0) {
+        ui.font = LoadFontEx("", 120, 0, 0);
+        if (ui.font.texture.id == 0) {
+            ui.font = GetFontDefault();
+        }
+    }
+    
+    SetTextureFilter(ui.font.texture, TEXTURE_FILTER_BILINEAR);
+    int font_size = 16;
     int font_spacing = 1;
     InitAudioDevice();
-    SetTraceLogLevel(LOG_NONE);
     SetTargetFPS(60);
     
     ui.music_path = init_String_dynamic_array(2);
