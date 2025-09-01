@@ -7,7 +7,7 @@
 
 static const char *gdb = "-ggdb";
 
-#define PLATFORM_LINUX 0
+#define PLATFORM_LINUX 1
 #define STATIC_BUILD 1
 
 #if PLATFORM_LINUX
