@@ -31,6 +31,11 @@ typedef struct {
     Font font;
     int item;
     bool requested;
+    Texture2D play_texture;
+    Texture2D pause_texture;
+    Texture2D fullscreen_texture;
+    Texture2D seek_forward_texture;
+    Texture2D seek_backward_texture;
 } Ui;
 
 typedef void (*plug_init_t)(Plug *plug, Ui *ui, qui_Context *ctx);
@@ -38,5 +43,7 @@ typedef void (*plug_update_t)(Plug *plug, Ui *ui, qui_Context *ctx);
 
 void plug_init_imp(Plug *plug, Ui *ui, qui_Context *ctx);
 void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx);
+
+Texture2D ImageToTexture(const char* path);
 
 #endif // PLUG_H

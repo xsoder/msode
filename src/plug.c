@@ -14,11 +14,31 @@ static float time_fade = 0.0f;
 static float button_fade = 0.0f;
 static float state = 0.0f;
 static float volume = 1.0f;
-float hue;
+static bool fullscreen_mode = false;
+static int normal_panel_height = 100;
+static int panel_height = 100;
+static float skip_rate = 5.0f;
+static float hue;
+
+void raylib_draw_image(qui_Context *ctx, qui_Image *image, float x, float y, float w, float h) {
+    Texture2D tex = *(Texture2D*)image->data;
+    Rectangle src = { 0, 0, (float)image->width, (float)image->height };
+    Rectangle dst = { x + w/2.0f, y + h/2.0f, w, h };
+    Vector2 origin = { w/2.0f, h/2.0f };
+    DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
+}
+
 static int qui_mouse_in_area(qui_Context *ctx, float x, float y, float w, float h) {
     int mx = ctx->mouse_pos.x;
     int my = ctx->mouse_pos.y;
     return (mx >= (int)x && mx <= (int)(x+w) && my >= (int)y && my <= (int)(y+h));
+}
+
+Texture2D ImageToTexture(const char* path) {
+    Image img = LoadImage(path);
+    Texture2D texture = LoadTextureFromImage(img);
+    UnloadImage(img);
+    return texture;
 }
 
 void draw_rect_raylib(qui_Context *ctx, float x, float y, float width, float height, qui_Color color)
@@ -139,6 +159,7 @@ void plug_init_imp(Plug *plug, Ui *ui, qui_Context *ctx)
     ctx->draw_text = draw_text_raylib;
     ctx->text_width = text_width_raylib;
     ctx->text_height = text_height_raylib;
+    ctx->draw_image  = raylib_draw_image;
     
     if (ui->file_counter == 0) {
         const char *msg = "Drag Or\n Drop \n Music";
@@ -175,7 +196,7 @@ void draw_frequency_bars_smooth(Plug *plug, int screen_width, int screen_height,
     float sample_rate = 44100.0f;
     float freq_resolution = sample_rate / PLUG_BUF_N;
 
-    int panel_height = 100;
+
     int num_display_bars = 64;
     float bar_width = 7.0f;
     float spacing = ((float)screen_width / num_display_bars) - bar_width;
@@ -240,6 +261,13 @@ void draw_frequency_bars_smooth(Plug *plug, int screen_width, int screen_height,
 
 void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 {
+    qui_Image play_image  = { &ui->play_texture, ui->play_texture.width,  ui->play_texture.height,  4 };    
+    qui_Image pause_image = { &ui->pause_texture, ui->pause_texture.width, ui->pause_texture.height, 4 };
+    qui_Image fullscreen_image = { &ui->fullscreen_texture, ui->fullscreen_texture.width, ui->fullscreen_texture.height, 4 };
+
+    qui_Image seek_forward_image  = { &ui->seek_forward_texture, ui->seek_backward_texture.width,  ui->seek_forward_texture.height,  4 };
+    qui_Image seek_backward_image  = { &ui->seek_backward_texture, ui->seek_backward_texture.width,  ui->seek_backward_texture.height,  4 };
+    
     Vector2 mouse_pos = GetMousePosition();
     qui_mouse_move(ctx, (int)mouse_pos.x, (int)mouse_pos.y);
     
@@ -295,76 +323,51 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
             ui->requested = false;
         }
 
-        if(IsMusicValid(plug->music[ui->item])) {
-            float slider_y = (float)GetScreenHeight() - 60.0f;
-            float hover_area_height = 35.0f;
-            float fade_speed = 8.0f * GetFrameTime();
+        if(!fullscreen_mode) {
             
-            float volume_x = (float)GetScreenWidth() - (float)GetScreenWidth()/5;
-            float volume_w = 250.0f;
-            float time_x = 20.0f;
-            float time_w = 800.0f;
-            float button_x = volume_x - 80.0f;
-            float button_w = 60.0f;
-            
-            int hover_volume = qui_mouse_in_area(ctx, volume_x, slider_y - 20.0f, volume_w, hover_area_height);
-            int hover_time = qui_mouse_in_area(ctx, time_x, slider_y - 20.0f, time_w, hover_area_height);
-            int hover_button = qui_mouse_in_area(ctx, button_x, slider_y - 20.0f, button_w, hover_area_height);
-            
-            if (hover_volume || ctx->active_id != 0) {
-                volume_fade = fminf(volume_fade + fade_speed, 1.0f);
-            } else {
-                volume_fade = fmaxf(volume_fade - fade_speed, 0.0f);
-            }
-            
-            if (hover_time || ctx->active_id != 0) {
-                time_fade = fminf(time_fade + fade_speed, 1.0f);
-            } else {
-                time_fade = fmaxf(time_fade - fade_speed, 0.0f);
-            }
-            
-            if (hover_button || ctx->active_id != 0) {
-                button_fade = fminf(button_fade + fade_speed, 1.0f);
-            } else {
-                button_fade = fmaxf(button_fade - fade_speed, 0.0f);
-            }
+            if(IsMusicValid(plug->music[ui->item])) {
+                float slider_y = (float)GetScreenHeight() - 60.0f;
+                float fade_speed = 8.0f * GetFrameTime();
 
-            Color color = ColorFromHSV(hue, 0.8f, 0.9f);
-            Color text_color = {200, 200, 200, (unsigned char)(100 + 155 * (1.0f - volume_fade))};
-            float txt_font_size = 20.0f;
-            float txt_font_space = 2.0f;
-            if (!IsMusicStreamPlaying(plug->music[ui->item])) color = GRAY;
-            if (volume_fade > 0.1f) {
-                ctx->cursor_x = volume_x - 25;
-                ctx->cursor_y = (int)slider_y + 10;
-                qui_slider_float(ctx, "Vol", &volume, 0.0f, 1.0f, 200.0f);
-            } else {
-                Vector2 vol_pos = {(int)(volume_x + 1), (int)(slider_y + 8) };
-                DrawTextEx(ui->font,"Vol", vol_pos , txt_font_size, txt_font_space, text_color);
+                float max_slider_width = GetScreenWidth() * 0.2f; 
+                float slider_width = fminf(250.0f, max_slider_width);
+                float volume_x = GetScreenWidth() - slider_width - 20.0f;
+                float volume_w = 250.0f;
+                float time_x = 20.0f;
+                float time_w = 800.0f;
+                float button_x = volume_x - 80.0f;
+                float button_w = 60.0f;
                 
-                int vol_bar_width = (int)(30 * volume);
-                DrawRectangle((int)(volume_x + 35), (int)(slider_y + (int)txt_font_size - 3), vol_bar_width, 4, color);
-                DrawRectangleLines((int)(volume_x + 35), (int)(slider_y + (int)txt_font_size - 3), vol_bar_width, 4, GRAY);
+                Color color = ColorFromHSV(hue, 0.8f, 0.9f);
+                Color text_color = {200, 200, 200, (unsigned char)(100 + 155 * (1.0f - volume_fade))};
+                float txt_font_size = 20.0f;
+                float txt_font_space = 2.0f;
+                if (!IsMusicStreamPlaying(plug->music[ui->item])) color = GRAY;
+
+                ctx->cursor_x = volume_x - 25;
+                ctx->cursor_y = slider_y + 15;
+                qui_slider(ctx, "Vol", &volume, 0.0f, 1.0f, 200.0f);
+
+                Vector2 time_pos = {(int)(time_x + 5), (int)(slider_y + 8) };
+                DrawTextEx(ui->font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
+                
+                float progress = (length > 0) ? (elapsed / length) : 0.0f;
+                int progress_width = (int)(200 * progress);
+                DrawRectangle((int)(time_x + 50), (int)(slider_y + (int)txt_font_size - 3), progress_width, 4, color);
+                DrawRectangleLines((int)(time_x + 50), (int)(slider_y + (int)txt_font_size - 3), 200, 4, GRAY);
+
+                Vector2 pos = { (int)(time_x + 260), (int)(slider_y + (int)txt_font_size - 9) };
+                float time_font_size = 18.0f;
+                float time_font_space = 2.0f;
+                int elapsed_min = (int)(elapsed) / 60;
+                int elapsed_sec = (int)(elapsed) % 60;
+                int length_min = (int)(length) / 60;
+                int length_sec = (int)(length) % 60;
+
+                DrawTextEx(ui->font, TextFormat("%02d:%02d / %02d:%02d", elapsed_min, elapsed_sec, length_min, length_sec), pos, time_font_size, time_font_space, text_color);
             }
-
-            Vector2 time_pos = {(int)(time_x + 5), (int)(slider_y + 8) };
-            DrawTextEx(ui->font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
-            
-            float progress = (length > 0) ? (elapsed / length) : 0.0f;
-            int progress_width = (int)(200 * progress);
-            DrawRectangle((int)(time_x + 50), (int)(slider_y + (int)txt_font_size - 3), progress_width, 4, color);
-            DrawRectangleLines((int)(time_x + 50), (int)(slider_y + (int)txt_font_size - 3), 200, 4, GRAY);
-
-            Vector2 pos = { (int)(time_x + 260), (int)(slider_y + (int)txt_font_size - 9) };
-            float time_font_size = 18.0f;
-            float time_font_space = 2.0f;
-            int elapsed_min = (int)(elapsed) / 60;
-            int elapsed_sec = (int)(elapsed) % 60;
-            int length_min = (int)(length) / 60;
-            int length_sec = (int)(length) % 60;
-
-            DrawTextEx(ui->font, TextFormat("%02d:%02d / %02d:%02d", elapsed_min, elapsed_sec, length_min, length_sec), pos, time_font_size, time_font_space, text_color);
         }
+
     }
     
     if (ui->file_counter > 0) {
@@ -397,7 +400,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
         else volume = state;
     }
 
-    float skip_rate = 5.0f;
+
     if (IsKeyPressed(KEY_RIGHT)){
         SeekMusicStream(plug->music[ui->item],  GetMusicTimePlayed(plug->music[ui->item]) + skip_rate);
     }
@@ -418,15 +421,69 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 
     draw_frequency_bars_smooth(plug, w, h, ui->item);
 
-    if (ui->file_counter > 0) {
-        int x = 26;
-        int y = h - 90;
-        float fontsize = 20.0f;
-        
-        const char *current_file = get_String_DA(ui->music_path, ui->item);
-        Vector2 pos = { x , y };
-        DrawTextEx(ui->font, TextFormat("Playing: %s", current_file) , pos, fontsize, 2.0f, WHITE);
+    float button_size = 50.0f;
+    float image_size  = 40.0f;
+
+    float center_x = GetScreenWidth() / 2.0f;
+    ctx->cursor_x = center_x;
+    ctx->cursor_y = GetScreenHeight() - button_size - 10.0f;
+
+    qui_Image *icon = IsMusicStreamPlaying(plug->music[ui->item]) ? &pause_image : &play_image;
+    
+
+    if(ui->file_counter > 0 && fullscreen_mode == false) {
+        if (qui_image_button(ctx, icon, button_size, button_size, image_size, image_size)) {
+            if (IsMusicStreamPlaying(plug->music[ui->item])) {
+                PauseMusicStream(plug->music[ui->item]);
+            } else {
+                ResumeMusicStream(plug->music[ui->item]);
+            }
+        }
+
+        ctx->cursor_x = center_x + 50.0f;
+        ctx->cursor_y = GetScreenHeight() - button_size - 10.0f;
+        if (qui_image_button(ctx, &seek_forward_image, button_size, button_size, image_size, image_size)) {
+            SeekMusicStream(plug->music[ui->item],  GetMusicTimePlayed(plug->music[ui->item]) + skip_rate);
+        }
+
+        ctx->cursor_y = GetScreenHeight() - button_size - 10.0f;
+        ctx->cursor_x = center_x - 50.0f;
+        if (qui_image_button(ctx, &seek_backward_image, button_size, button_size, image_size, image_size)) {
+            SeekMusicStream(plug->music[ui->item],  GetMusicTimePlayed(plug->music[ui->item]) - skip_rate);
+        }
+    
     }
+
+    if(ui->file_counter > 0) {
+        button_size = 35.0f;
+        image_size = 25.0f;
+        ctx->cursor_x = GetScreenWidth() - button_size - 10.0f;
+        ctx->cursor_y = 10.0f;
+
+
+        if (qui_image_button(ctx, &fullscreen_image, button_size, button_size, image_size, image_size)) {
+            fullscreen_mode = !fullscreen_mode;
+            if (fullscreen_mode) {
+                panel_height = 0;
+            } else {
+                panel_height = normal_panel_height;
+            }
+        }
+    }
+
+
+    if(!fullscreen_mode) {
+        if (ui->file_counter > 0) {
+            int x = 26;
+            int y = h - 90;
+            float fontsize = 20.0f;
+            
+            const char *current_file = get_String_DA(ui->music_path, ui->item);
+            Vector2 pos = { x , y };
+            DrawTextEx(ui->font, TextFormat("Playing: %s", current_file) , pos, fontsize, 2.0f, WHITE);
+        }
+    }
+
     
     qui_end(ctx);
 }

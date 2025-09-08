@@ -59,8 +59,8 @@ int main(int argc, char **argv)
         "-Wall",
         "-Wextra",
     );
-    nob_cmd_append(&cmd, "-Ideps/quickui/src", raylib);
-    nob_cmd_append(&cmd, "-c", "./deps/quickui/src/quickui.c", "-o", "build/quickui.o");
+    nob_cmd_append(&cmd, "-Isrc_build", raylib);
+    nob_cmd_append(&cmd, "-c", "src_build/quickui.c", "-o", "build/quickui.o");
     if (!nob_cmd_run(&cmd)) return 1;
 
     nob_cmd_append(&cmd, compiler,
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
         "-Wall",
         "-Wextra",
     );
-    nob_cmd_append(&cmd, "-Ideps/quickui/src", raylib);
+    nob_cmd_append(&cmd, "-Isrc_build", raylib);
     nob_cmd_append(&cmd, "-c", "./src/plug.c", "-o", "build/plug.o");
     if (!nob_cmd_run(&cmd)) return 1;
 
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
         "-Wextra",
     );
         
-    nob_cmd_append(&cmd, "-Ideps/quickui/src", raylib);
+    nob_cmd_append(&cmd, "-Isrc_build", raylib);
     nob_cmd_append(&cmd, "-c", "./src/msode.c", "-o", "build/msode.o");
     if (!nob_cmd_run(&cmd)) return 1;
 
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
         "-Wextra",
     );
         
-    nob_cmd_append(&cmd, "-Ideps/quickui/src", raylib);
+    nob_cmd_append(&cmd, "-Isrc_build", raylib);
     #if PLATFORM_LINUX
     const char *hot_reload = "./src/hotreload-linux.c";
     static const char *hot_obj = "build/hotreload-linux.o";

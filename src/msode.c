@@ -23,6 +23,7 @@ qui_Context ctx = {0};
 
 int main(void)
 {
+    
     if (!reload_libplug()) return 1;
     Win win = {0};
     win.width = 1400;
@@ -34,12 +35,12 @@ int main(void)
     ui.requested = false;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    SetTraceLogLevel(LOG_NONE);
+    //SetTraceLogLevel(LOG_NONE);
     
     InitWindow(win.width, win.height, win.title);
-    ui.font = LoadFontEx("/home/xsoder/.fonts/Iosevka-Regular.ttf", 120, 0, 0); 
+    ui.font = LoadFontEx("/home/xsoder/.fonts/Iosevka-Regular.ttf", 360, 0, 0); 
     if (ui.font.texture.id == 0) {
-        ui.font = LoadFontEx("", 120, 0, 0);
+        ui.font = LoadFontEx("", 360, 0, 0);
         if (ui.font.texture.id == 0) {
             ui.font = GetFontDefault();
         }
@@ -56,8 +57,12 @@ int main(void)
     ImageResize(&penger, 150, 150);
     ui.texture = LoadTextureFromImage(penger);
 
-    // TODO: system wide font install
+    ui.play_texture  = ImageToTexture("resources/play.png");
+    ui.pause_texture = ImageToTexture("resources/pause.png");
+    ui.fullscreen_texture = ImageToTexture("resources/fullscreen.png");
 
+    ui.seek_forward_texture  = ImageToTexture("resources/seek_forward.png");
+    ui.seek_backward_texture = ImageToTexture("resources/seek_backward.png");
     qui_init(&ctx, NULL);
     qui_set_font(&ctx, &ui.font, font_size, font_spacing);
         
@@ -98,6 +103,10 @@ int main(void)
     
     if (ui.music_path) free_String_DA(ui.music_path);
 
+    UnloadTexture(ui.texture);
+    UnloadTexture(ui.play_texture);
+    UnloadTexture(ui.pause_texture);
+    
     CloseAudioDevice();
     CloseWindow();
     
