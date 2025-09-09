@@ -28,7 +28,7 @@ get_deps() {
 		printf "%s STARTING DEPENDENCY DOWNLOAD\n" "$LOG"
 
 		for url in "$raylib_url_linux" "$raylib_url_window" "$tiny_file_h" "$tiny_file_c" ; do
-			if ! wget -q "$url"; then
+			if ! wget -4 -q "$url"; then
 				printf "%s Failed to download from %s\n" "$ERROR" "$url"
 				echo "Failed URL: $url" >> download_errors.log  
 			else
