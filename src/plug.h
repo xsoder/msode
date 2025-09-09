@@ -36,6 +36,8 @@ typedef struct {
     Texture2D fullscreen_texture;
     Texture2D seek_forward_texture;
     Texture2D seek_backward_texture;
+    Texture2D next_texture;
+    Texture2D previous_texture;
 } Ui;
 
 typedef void (*plug_init_t)(Plug *plug, Ui *ui, qui_Context *ctx);

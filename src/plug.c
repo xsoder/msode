@@ -267,7 +267,10 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 
     qui_Image seek_forward_image  = { &ui->seek_forward_texture, ui->seek_backward_texture.width,  ui->seek_forward_texture.height,  4 };
     qui_Image seek_backward_image  = { &ui->seek_backward_texture, ui->seek_backward_texture.width,  ui->seek_backward_texture.height,  4 };
-    
+
+    qui_Image next_image  = { &ui->next_texture, ui->next_texture.width,  ui->next_texture.height,  4 };
+    qui_Image previous_image  = { &ui->previous_texture, ui->previous_texture.width,  ui->previous_texture.height,  4 };
+
     Vector2 mouse_pos = GetMousePosition();
     qui_mouse_move(ctx, (int)mouse_pos.x, (int)mouse_pos.y);
     
@@ -421,13 +424,13 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 
     draw_frequency_bars_smooth(plug, w, h, ui->item);
 
-    float button_size = 50.0f;
-    float image_size  = 40.0f;
+    float button_size = 30.0f;
+    float image_size = 25.0f;
 
     float center_x = GetScreenWidth() / 2.0f;
-    ctx->cursor_x = center_x;
-    ctx->cursor_y = GetScreenHeight() - button_size - 10.0f;
 
+    ctx->cursor_x = center_x + (button_size / 2.0f) ;
+    ctx->cursor_y = GetScreenHeight() - button_size - 20.0f;
     qui_Image *icon = IsMusicStreamPlaying(plug->music[ui->item]) ? &pause_image : &play_image;
     
 
@@ -440,16 +443,39 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
             }
         }
 
-        ctx->cursor_x = center_x + 50.0f;
-        ctx->cursor_y = GetScreenHeight() - button_size - 10.0f;
+
+        float post = 35.0f;
+        float post_y = 20.0f;
+        ctx->cursor_x = center_x + (button_size / 2.0f) + post;
+        ctx->cursor_y = GetScreenHeight() - button_size - post_y;
         if (qui_image_button(ctx, &seek_forward_image, button_size, button_size, image_size, image_size)) {
             SeekMusicStream(plug->music[ui->item],  GetMusicTimePlayed(plug->music[ui->item]) + skip_rate);
         }
 
-        ctx->cursor_y = GetScreenHeight() - button_size - 10.0f;
-        ctx->cursor_x = center_x - 50.0f;
+        ctx->cursor_x = center_x + (button_size / 2.0f) - post;
+        ctx->cursor_y = GetScreenHeight() - button_size - post_y;
         if (qui_image_button(ctx, &seek_backward_image, button_size, button_size, image_size, image_size)) {
             SeekMusicStream(plug->music[ui->item],  GetMusicTimePlayed(plug->music[ui->item]) - skip_rate);
+        }
+    
+        post = 70.0f;
+        ctx->cursor_x = center_x + (button_size / 2.0f) + post;
+        ctx->cursor_y = GetScreenHeight() - button_size - post_y;
+        if (qui_image_button(ctx, &next_image, button_size, button_size, image_size, image_size)) {
+            DetachAudioStreamProcessor(plug->music[ui->item].stream, callback);
+            ui->item++;
+            if (ui->item >= ui->file_counter) ui->item = 0;
+            ui->requested = false;
+        }
+
+        ctx->cursor_x = center_x + (button_size / 2.0f) - post;
+        ctx->cursor_y = GetScreenHeight() - button_size - post_y;
+        if (qui_image_button(ctx, &previous_image, button_size, button_size, image_size, image_size) && ui->item > 0) {
+            DetachAudioStreamProcessor(plug->music[ui->item].stream, callback);
+            ui->item--;
+            if (ui->item >= ui->file_counter) ui->item = 0;
+            ui->requested = false;                
+
         }
     
     }
@@ -484,7 +510,6 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 
             const char *home_dir = getenv("HOME");
 
-            // Ensure we got the home directory successfully
             if (home_dir == NULL) {
                 home_dir = "/home/username";
             }

@@ -62,6 +62,9 @@ int main(int argc, char *argv[])
 
     ui.seek_forward_texture  = ImageToTexture("resources/seek_forward.png");
     ui.seek_backward_texture = ImageToTexture("resources/seek_backward.png");
+
+    ui.next_texture  = ImageToTexture("resources/next.png");
+    ui.previous_texture = ImageToTexture("resources/previous.png");
     qui_init(&ctx, NULL);
     qui_set_font(&ctx, &ui.font, font_size, font_spacing);
     
