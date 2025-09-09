@@ -472,18 +472,52 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
     }
 
 
-    if(!fullscreen_mode) {
+    if (!fullscreen_mode) {
+        static bool is_clicked = false;
+
         if (ui->file_counter > 0) {
             int x = 26;
             int y = h - 90;
             float fontsize = 20.0f;
-            
+
             const char *current_file = get_String_DA(ui->music_path, ui->item);
-            Vector2 pos = { x , y };
-            DrawTextEx(ui->font, TextFormat("Playing: %s", current_file) , pos, fontsize, 2.0f, WHITE);
+
+            const char *home_dir = getenv("HOME");
+
+            // Ensure we got the home directory successfully
+            if (home_dir == NULL) {
+                home_dir = "/home/username";
+            }
+
+            char base_path[1024];
+            snprintf(base_path, sizeof(base_path), "%s/music", home_dir);
+
+            char full_path[1024];
+            snprintf(full_path, sizeof(full_path), "%s/%s", base_path, current_file);
+
+            const char *display_text = current_file;
+
+            if (qui_mouse_in_area(ctx, x, y, 300, fontsize + 10)) {
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                    is_clicked = !is_clicked;
+                }
+            }
+
+            if (!is_clicked) {
+                const char *last_slash = strrchr(current_file, '/');
+
+                if (last_slash != NULL) {
+                    display_text = last_slash + 1;
+                }
+            } else {
+                display_text = full_path;
+            }
+
+            Vector2 pos = { x, y };
+            
+            DrawTextEx(ui->font, TextFormat("Playing: %s", display_text), pos, fontsize, 2.0f, WHITE);
         }
     }
 
-    
     qui_end(ctx);
 }
