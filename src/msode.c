@@ -21,21 +21,20 @@ Plug plug = {0};
 Ui ui = {0};
 qui_Context ctx = {0};
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    
+    ui.file_counter = 0;
+    ui.item = 0;
+    ui.requested = false;
+
     if (!reload_libplug()) return 1;
     Win win = {0};
     win.width = 1400;
     win.height = 900;
     win.title = "Msode";
 
-    ui.file_counter = 0;
-    ui.item = 0;
-    ui.requested = false;
-
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    //SetTraceLogLevel(LOG_NONE);
+    SetTraceLogLevel(LOG_NONE);
     
     InitWindow(win.width, win.height, win.title);
     ui.font = LoadFontEx("/home/xsoder/.fonts/Iosevka-Regular.ttf", 360, 0, 0); 
@@ -65,7 +64,17 @@ int main(void)
     ui.seek_backward_texture = ImageToTexture("resources/seek_backward.png");
     qui_init(&ctx, NULL);
     qui_set_font(&ctx, &ui.font, font_size, font_spacing);
-        
+    
+    if (argc > 1) {
+        for (int i = 1; i < argc; ++i) {
+            if (ui.file_counter < MAX - 1) {
+                append_String_DA(ui.music_path, strdup(argv[i]));
+                plug.music[ui.file_counter] = LoadMusicStream(argv[i]);
+                ui.file_counter++;
+            }
+        }
+    }
+    
     while (!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(BG_COLOR);

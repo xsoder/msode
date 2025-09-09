@@ -5,7 +5,7 @@
 #include <complex.h>
 #include <assert.h>
 #include <string.h>
-#include <rlgl.h>
+#include <raylib.h>
 #include "config.h"
 
 static Plug *g_plug = NULL;
