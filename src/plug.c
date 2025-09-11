@@ -13,7 +13,7 @@ static float volume_fade = 0.0f;
 static float time_fade = 0.0f;
 static float button_fade = 0.0f;
 static float state = 0.0f;
-static float volume = 1.0f;
+static float volume = 0.5f;
 static bool fullscreen_mode = false;
 static int normal_panel_height = 100;
 static int panel_height = 100;
@@ -517,7 +517,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
             char base_path[1024];
             snprintf(base_path, sizeof(base_path), "%s/music", home_dir);
 
-            char full_path[1024];
+            char full_path[2048];
             snprintf(full_path, sizeof(full_path), "%s/%s", base_path, current_file);
 
             const char *display_text = current_file;
