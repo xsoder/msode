@@ -261,6 +261,10 @@ void draw_frequency_bars_smooth(Plug *plug, int screen_width, int screen_height,
 
 void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 {
+    if (IsKeyPressed(KEY_F11)) {
+        ToggleFullscreen();
+    }
+
     qui_Image play_image  = { &ui->play_texture, ui->play_texture.width,  ui->play_texture.height,  4 };    
     qui_Image pause_image = { &ui->pause_texture, ui->pause_texture.width, ui->pause_texture.height, 4 };
     qui_Image fullscreen_image = { &ui->fullscreen_texture, ui->fullscreen_texture.width, ui->fullscreen_texture.height, 4 };
