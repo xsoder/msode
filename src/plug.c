@@ -395,6 +395,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
         if (volume <= 0.0f) volume = 0.0f;
     }
 
+ 
     if (IsKeyPressed(KEY_M)){
         if (volume != 0.0f){
             state = volume;

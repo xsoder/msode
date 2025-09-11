@@ -79,6 +79,10 @@ int main(int argc, char *argv[])
     }
     
     while (!WindowShouldClose()) {
+        if (IsKeyPressed(KEY_F11)) {
+            ToggleFullscreen();
+        }
+
         BeginDrawing();
         ClearBackground(BG_COLOR);
 
