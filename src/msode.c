@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     SetTraceLogLevel(LOG_NONE);
     
     InitWindow(win.width, win.height, win.title);
-    ui.font = LoadFontEx("/home/xsoder/.fonts/Iosevka-Regular.ttf", 360, 0, 0); 
+    ui.font = LoadFontEx("resources/JetBrainsMono-Regular.ttf", 360, 0, 0); 
     if (ui.font.texture.id == 0) {
         ui.font = LoadFontEx("", 360, 0, 0);
         if (ui.font.texture.id == 0) {
