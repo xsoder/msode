@@ -20,7 +20,6 @@ int main(int argc, char **argv)
 {
     NOB_GO_REBUILD_URSELF(argc, argv);
     Cmd cmd = {0};
-    Procs proc = {0};
 
     #if PLATFORM_LINUX
     nob_cmd_append(&cmd, "bash", "configure");
@@ -63,7 +62,7 @@ int main(int argc, char **argv)
     );
     nob_cmd_append(&cmd, "-Isrc_build", raylib);
     nob_cmd_append(&cmd, "-c", "src_build/quickui.c", "-o", "build/quickui.o");
-    if (!nob_cmd_run(&cmd, .async = &proc)) return 1;
+    if (!nob_cmd_run(&cmd)) return 1;
 
     nob_cmd_append(&cmd, compiler,
         gdb,
@@ -72,14 +71,14 @@ int main(int argc, char **argv)
     );
     nob_cmd_append(&cmd, "-Isrc_build", raylib);
     nob_cmd_append(&cmd, "-c", "./src/plug.c", "-o", "build/plug.o");
-    if (!nob_cmd_run(&cmd, .async = &proc)) return 1;
+    if (!nob_cmd_run(&cmd)) return 1;
 
     nob_cmd_append(&cmd, ar, ar_flag, "build/libplug.a", "build/quickui.o", "build/plug.o");
-    if (!nob_cmd_run(&cmd, .async = &proc)) return 1;
+    if (!nob_cmd_run(&cmd)) return 1;
     
     #if !PLATFORM_LINUX
     nob_cmd_append(&cmd, "x86_64-w64-mingw32-ranlib", "build/libplug.a");
-    if (!nob_cmd_run(&cmd, .async = &proc)) return 1;
+    if (!nob_cmd_run(&cmd)) return 1;
     #endif
 
     // BUILDING
@@ -91,7 +90,7 @@ int main(int argc, char **argv)
         
     nob_cmd_append(&cmd, "-Isrc_build", raylib);
     nob_cmd_append(&cmd, "-c", "./src/msode.c", "-o", "build/msode.o");
-    if (!nob_cmd_run(&cmd, .async = &proc)) return 1;
+    if (!nob_cmd_run(&cmd)) return 1;
 
     nob_cmd_append(&cmd, compiler,
         gdb,
@@ -109,7 +108,7 @@ int main(int argc, char **argv)
     #endif
 
     nob_cmd_append(&cmd, "-c", hot_reload, "-o", hot_obj);
-    if (!nob_cmd_run(&cmd, .async = &proc)) return 1;
+    if (!nob_cmd_run(&cmd)) return 1;
 
     // link
     #if STATIC_BUILD
@@ -158,7 +157,6 @@ int main(int argc, char **argv)
         "-lglu32",
         "-Wl,-subsystem,console");
     #endif
-    if (!procs_wait(proc)) return 1;
     if (!nob_cmd_run(&cmd)) return 1;
 
     return 0;
