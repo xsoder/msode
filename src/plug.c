@@ -46,7 +46,9 @@ void load_config(Config *config) {
                 config->volume = strtof(value, NULL);
             } else if (strcmp(key, "fullscreen") == 0) {
                 config->fullscreen = (atoi(value) != 0);
-            } 
+            } else {
+                // TODO: Make tinyfd send error message 
+            }
         }
     }
 
