@@ -158,7 +158,7 @@ int main(int argc, char **argv)
         "-lglu32",
         "-Wl,-subsystem,console");
     #endif
-    if (!nob_procs_wait(proc)) return 1;
+    if (!procs_wait(proc)) return 1;
     if (!nob_cmd_run(&cmd)) return 1;
 
     return 0;

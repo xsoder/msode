@@ -202,7 +202,7 @@ void draw_frequency_bars_smooth(Plug *plug, int screen_width, int screen_height,
     float spacing = ((float)screen_width / num_display_bars) - bar_width;
 
     float min_freq = 20.0f;
-    float max_freq = 18000.0f;
+    float max_freq = 22000.0f;
     float log_min = log10f(min_freq);
     float log_max = log10f(max_freq);
     float log_range = log_max - log_min;
@@ -510,19 +510,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
             float fontsize = 20.0f;
 
             const char *current_file = get_String_DA(ui->music_path, ui->item);
-
-            const char *home_dir = getenv("HOME");
-
-            if (home_dir == NULL) {
-                home_dir = "/home/username";
-            }
-
-            char base_path[1024];
-            snprintf(base_path, sizeof(base_path), "%s/music", home_dir);
-
-            char full_path[2048];
-            snprintf(full_path, sizeof(full_path), "%s/%s", base_path, current_file);
-
+            const char *full_path = current_file;
             const char *display_text = current_file;
 
             if (qui_mouse_in_area(ctx, x, y, 300, fontsize + 10)) {
