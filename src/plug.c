@@ -38,6 +38,7 @@ Texture2D ImageToTexture(const char* path) {
     Image img = LoadImage(path);
     Texture2D texture = LoadTextureFromImage(img);
     UnloadImage(img);
+    SetTextureFilter(texture, TEXTURE_FILTER_TRILINEAR);
     return texture;
 }
 
@@ -358,10 +359,10 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
                 
                 float progress = (length > 0) ? (elapsed / length) : 0.0f;
                 int progress_width = (int)(200 * progress);
-                DrawRectangle((int)(time_x + 50), (int)(slider_y + (int)txt_font_size - 3), progress_width, 4, color);
-                DrawRectangleLines((int)(time_x + 50), (int)(slider_y + (int)txt_font_size - 3), 200, 4, GRAY);
+                DrawRectangle((int)(time_x + 60), (int)(slider_y + (int)txt_font_size - 3), progress_width, 4, color);
+                DrawRectangleLines((int)(time_x + 60), (int)(slider_y + (int)txt_font_size - 3), 200, 4, GRAY);
 
-                Vector2 pos = { (int)(time_x + 260), (int)(slider_y + (int)txt_font_size - 9) };
+                Vector2 pos = { (int)(time_x + 270), (int)(slider_y + (int)txt_font_size - 9) };
                 float time_font_size = 18.0f;
                 float time_font_space = 2.0f;
                 int elapsed_min = (int)(elapsed) / 60;
