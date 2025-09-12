@@ -350,10 +350,29 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
                 float txt_font_space = 2.0f;
                 if (!IsMusicStreamPlaying(plug->music[ui->item])) color = GRAY;
 
-                ctx->cursor_x = volume_x - 25;
+                ctx->cursor_x = volume_x - 10;
                 ctx->cursor_y = slider_y + 15;
-                qui_slider(ctx, "Vol", &volume, 0.0f, 1.0f, 200.0f);
+                
+                // TODO: do a shader vectors
+                float hue_progress = volume * 360.0f;  
+                Color progress_color;
+                if(IsMusicStreamPlaying(plug->music[(ui->item)])) progress_color = ColorFromHSV(hue_progress, 0.8f, 0.9f);
+                else  progress_color = GRAY;
 
+                qui_Color vol_bg  = { BG_COLOR. r, BG_COLOR.g, BG_COLOR.b , BG_COLOR.a };
+                qui_Color vol_col = { progress_color.r , progress_color.g, progress_color.b , progress_color.a };
+                qui_SliderStyle volume_style = {
+                    .track_color = vol_bg,
+                    .track_hot_color = vol_col,
+                    .track_active_color = vol_col,
+                    .knob_color = vol_bg,
+                    .knob_hot_color = vol_col,
+                    .knob_active_color = vol_col,
+                    .progress_color = vol_col,
+                    .show_progress = true
+                };
+
+                qui_slider_ex(ctx, "Volume", &volume, 0.0f, 1.0f, 150.0f, &volume_style, false);
                 Vector2 time_pos = {(int)(time_x + 5), (int)(slider_y + 8) };
                 DrawTextEx(ui->font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
                 

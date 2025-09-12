@@ -213,7 +213,12 @@ int qui_checkbox(qui_Context *ctx, const char *label, int *value) {
     return changed;
 }
 
+// Set this as a default
 int qui_slider(qui_Context *ctx, const char *label, float *value, float minv, float maxv, float width) {
+    return qui_slider_ex(ctx, label, value, minv, maxv, width, NULL, true);
+}
+
+int qui_slider_ex(qui_Context *ctx, const char *label, float *value, float minv, float maxv, float width, qui_SliderStyle *style, bool show_value) {
     qui_Id id = qui_gen_id(ctx);
     float label_w = qui_text_width_fallback(ctx, label);
     float x = ctx->cursor_x;
@@ -229,20 +234,47 @@ int qui_slider(qui_Context *ctx, const char *label, float *value, float minv, fl
         if (ctx->mouse_pressed) ctx->active_id = id;
     }
 
-    qui_Color col = ctx->col_box;
-    if (ctx->active_id == id) col = ctx->col_box_active;
-    else if (ctx->hot_id == id) col = ctx->col_box_hot;
+    // Use custom colors if provided
+    qui_Color track_color = ctx->col_box;
+    qui_Color track_hot_color = ctx->col_box_hot;
+    qui_Color track_active_color = ctx->col_box_active;
+    qui_Color knob_color = ctx->col_box_active;
+    qui_Color knob_hot_color = ctx->col_box_active;
+    qui_Color knob_active_color = ctx->col_box_active;
+    qui_Color progress_color = ctx->col_box_active;
+    
+    if (style) {
+        if (style->track_color.a > 0) track_color = style->track_color;
+        if (style->track_hot_color.a > 0) track_hot_color = style->track_hot_color;
+        if (style->track_active_color.a > 0) track_active_color = style->track_active_color;
+        if (style->knob_color.a > 0) knob_color = style->knob_color;
+        if (style->knob_hot_color.a > 0) knob_hot_color = style->knob_hot_color;
+        if (style->knob_active_color.a > 0) knob_active_color = style->knob_active_color;
+        if (style->progress_color.a > 0) progress_color = style->progress_color;
+    }
+
+    qui_Color current_track_color = track_color;
+    if (ctx->active_id == id) current_track_color = track_active_color;
+    else if (ctx->hot_id == id) current_track_color = track_hot_color;
 
     qui_draw_text(ctx, label, x, y);
+    
     qui_Rect rback = {(int)slider_w, (int)slider_h, (int)slider_x, (int)(y + 2)};
-    qui_draw_rect(ctx, &rback, col);
+    qui_draw_rect(ctx, &rback, current_track_color);
 
     float t = (*value - minv) / (maxv - minv);
     if (t < 0) t = 0; if (t > 1) t = 1;
     float kx = slider_x + t * (slider_w - knob_w);
 
+    // Draw progress bar
+    if (style && style->show_progress) {
+        float progress_w = t * slider_w;
+        qui_Rect rprogress = {(int)progress_w, (int)slider_h, (int)slider_x, (int)(y + 2)};
+        qui_draw_rect(ctx, &rprogress, progress_color);
+    }
+
+    // Handle mouse interaction
     if (ctx->active_id == id && ctx->mouse_down) {
-        // Fix: Apply layout offset to mouse coordinate calculation
         float local_x = (float)ctx->mouse_pos.x - (slider_x + ctx->layout_offset_x);
         float nt = local_x / (slider_w - knob_w);
         if (nt < 0) nt = 0; if (nt > 1) nt = 1;
@@ -250,12 +282,18 @@ int qui_slider(qui_Context *ctx, const char *label, float *value, float minv, fl
     }
     if (ctx->mouse_released && ctx->active_id == id) ctx->active_id = 0;
 
-    qui_Rect rknob = {(int)knob_w, (int)(slider_h + 4), (int)kx, (int)(y - 2)};
-    qui_draw_rect(ctx, &rknob, ctx->col_box_active);
+    qui_Color current_knob_color = knob_color;
+    if (ctx->active_id == id) current_knob_color = knob_active_color;
+    else if (ctx->hot_id == id) current_knob_color = knob_hot_color;
 
-    char buf[64];
-    snprintf(buf, sizeof(buf), "%.3f", *value);
-    qui_draw_text(ctx, buf, slider_x + slider_w + 8.0f, y);
+    qui_Rect rknob = {(int)knob_w, (int)(slider_h + 4), (int)kx, (int)(y - 2)};
+    qui_draw_rect(ctx, &rknob, current_knob_color);
+
+    if (show_value) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%.3f", *value);
+        qui_draw_text(ctx, buf, slider_x + slider_w + 8.0f, y);
+    }
 
     ctx->cursor_y += h + ctx->spacing_y;
     ctx->cursor_x = ctx->spacing_x;

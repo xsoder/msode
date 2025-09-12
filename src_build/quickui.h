@@ -17,6 +17,17 @@ typedef struct { void *data;  int width, height, channels; } qui_Image;
 typedef struct { int width, height, pos_x, pos_y; } qui_Rect;
 typedef struct { qui_vec2_t size, pos; } qui_RectV2;
 
+typedef struct {
+    qui_Color track_color;
+    qui_Color track_hot_color;
+    qui_Color track_active_color;
+    qui_Color knob_color;
+    qui_Color knob_hot_color;
+    qui_Color knob_active_color;
+    qui_Color progress_color;
+    bool show_progress;
+} qui_SliderStyle;
+
 typedef struct qui_Context {
     int width;
     int height;
@@ -96,6 +107,7 @@ void qui_draw_text(qui_Context *ctx, const char *text, float x, float y);
 int qui_button(qui_Context *ctx, const char *label);
 int qui_checkbox(qui_Context *ctx, const char *label, int *value);
 int qui_slider(qui_Context *ctx, const char *label, float *value, float minv, float maxv, float width);
+int qui_slider_ex(qui_Context *ctx, const char *label, float *value, float minv, float maxv, float width, qui_SliderStyle *style, bool show_value);
 int qui_textbox(qui_Context *ctx, char *buffer, size_t cap, float width);
 
 void qui_draw_image(qui_Context *ctx, qui_Image *image, float x, float y, float w, float h);
