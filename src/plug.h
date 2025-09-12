@@ -12,6 +12,12 @@ DECLARE_DA(const char*, String)
 #define PLUG_BUF_N 8192
 #define MAX 200
 
+
+typedef struct {
+    float volume;
+    bool fullscreen;
+} Config;
+
 typedef struct {
     float left;
     float right;

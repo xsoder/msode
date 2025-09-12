@@ -7,6 +7,9 @@
 #include <string.h>
 #include <raylib.h>
 #include "config.h"
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static Plug *g_plug = NULL;
 static float volume_fade = 0.0f;
@@ -19,6 +22,50 @@ static int normal_panel_height = 100;
 static int panel_height = 100;
 static float skip_rate = 5.0f;
 static float hue;
+static Config config = {0};
+#define CONFIG_PATH "msode.conf"
+
+
+void load_config(Config *config) {
+    // TODO: Open file from a get env place
+    FILE *f = fopen(CONFIG_PATH, "r");
+    if (!f) {
+        config->volume = 0.5f; // Defaults
+        config->fullscreen = false;
+        return;
+    }
+
+    char line[1024];
+    while (fgets(line, sizeof(line), f)) {
+        char key[256];
+        char value[768];
+
+        // TODO things like theme could also be set here
+        if (sscanf(line, "%255[^=]=%767[^\n]", key, value) == 2) {
+            if (strcmp(key, "volume") == 0) {
+                config->volume = strtof(value, NULL);
+            } else if (strcmp(key, "fullscreen") == 0) {
+                config->fullscreen = (atoi(value) != 0);
+            } 
+        }
+    }
+
+    fclose(f);
+}
+
+void save_config(Config *config) {
+    // TODO: Open file from a get env place
+    FILE *f = fopen(CONFIG_PATH, "w");
+    if (!f) return;
+
+    config->volume = volume;
+    config->fullscreen = fullscreen_mode;
+    fprintf(f, "volume=%.3f\n", config->volume);
+    fprintf(f, "fullscreen=%d\n", config->fullscreen ? 1 : 0);
+
+    fclose(f);
+}
+
 
 void raylib_draw_image(qui_Context *ctx, qui_Image *image, float x, float y, float w, float h) {
     Texture2D tex = *(Texture2D*)image->data;
@@ -142,10 +189,22 @@ void callback(void *buffer, unsigned int frames)
     }
 }
 
+
+// Temporary fix
+static bool config_loaded = false;
+
 void plug_init_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 {
     g_plug = plug;
-    
+    if (!config_loaded) {
+        load_config(&config);
+        volume = config.volume;
+        fullscreen_mode = config.fullscreen;
+        config_loaded = true;
+    }
+
+    panel_height = fullscreen_mode ? 0 : normal_panel_height;
+
     static int fft_initialized = 0;
     if (!fft_initialized) {
         plug->max_amp = 0.0f;
@@ -350,7 +409,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
                 float txt_font_space = 2.0f;
                 if (!IsMusicStreamPlaying(plug->music[ui->item])) color = GRAY;
 
-                ctx->cursor_x = volume_x - 10;
+                ctx->cursor_x = volume_x - 7;
                 ctx->cursor_y = slider_y + 15;
                 
                 // TODO: do a shader vectors
@@ -372,7 +431,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
                     .show_progress = true
                 };
 
-                qui_slider_ex(ctx, "Volume", &volume, 0.0f, 1.0f, 150.0f, &volume_style, false);
+                qui_slider_ex(ctx, "Vol", &volume, 0.0f, 1.0f, 150.0f, &volume_style, false);
                 Vector2 time_pos = {(int)(time_x + 5), (int)(slider_y + 8) };
                 DrawTextEx(ui->font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
                 
@@ -554,6 +613,6 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
             DrawTextEx(ui->font, TextFormat("Playing: %s", display_text), pos, fontsize, 2.0f, WHITE);
         }
     }
-
+    save_config(&config);
     qui_end(ctx);
 }

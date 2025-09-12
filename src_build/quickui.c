@@ -263,7 +263,8 @@ int qui_slider_ex(qui_Context *ctx, const char *label, float *value, float minv,
     qui_draw_rect(ctx, &rback, current_track_color);
 
     float t = (*value - minv) / (maxv - minv);
-    if (t < 0) t = 0; if (t > 1) t = 1;
+    if (t < 0) t = 0;
+    if (t > 1) t = 1;  
     float kx = slider_x + t * (slider_w - knob_w);
 
     // Draw progress bar
@@ -277,7 +278,8 @@ int qui_slider_ex(qui_Context *ctx, const char *label, float *value, float minv,
     if (ctx->active_id == id && ctx->mouse_down) {
         float local_x = (float)ctx->mouse_pos.x - (slider_x + ctx->layout_offset_x);
         float nt = local_x / (slider_w - knob_w);
-        if (nt < 0) nt = 0; if (nt > 1) nt = 1;
+        if (nt < 0) nt = 0;
+        if (nt > 1) nt = 1;  
         *value = minv + nt * (maxv - minv);
     }
     if (ctx->mouse_released && ctx->active_id == id) ctx->active_id = 0;
@@ -300,7 +302,9 @@ int qui_slider_ex(qui_Context *ctx, const char *label, float *value, float minv,
     return 1;
 }
 
+// TODO: add capacity usange
 int qui_textbox(qui_Context *ctx, char *buffer, size_t cap, float width) {
+    (void)cap;
     qui_Id id = qui_gen_id(ctx);
     float h = qui_text_height_fallback(ctx, "A") + 8.0f;
     float x = ctx->cursor_x;

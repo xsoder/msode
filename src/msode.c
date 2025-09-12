@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
     UnloadTexture(ui.texture);
     UnloadTexture(ui.play_texture);
     UnloadTexture(ui.pause_texture);
-    
+
     CloseAudioDevice();
     CloseWindow();
     
