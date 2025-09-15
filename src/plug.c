@@ -23,6 +23,8 @@ static int panel_height = 100;
 static float skip_rate = 5.0f;
 static float hue;
 static Config config = {0};
+static bool loop_enabled = false;
+static float vol_x = 0.0f;
 #define CONFIG_PATH "msode.conf"
 
 
@@ -334,6 +336,8 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 
     qui_Image next_image  = { &ui->next_texture, ui->next_texture.width,  ui->next_texture.height,  4 };
     qui_Image previous_image  = { &ui->previous_texture, ui->previous_texture.width,  ui->previous_texture.height,  4 };
+    
+    qui_Image loop_image  = { &ui->loop_texture, ui->loop_texture.width,  ui->loop_texture.height,  4 };
 
     Vector2 mouse_pos = GetMousePosition();
     qui_mouse_move(ctx, (int)mouse_pos.x, (int)mouse_pos.y);
@@ -385,8 +389,12 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
         
         if (elapsed >= length) {
             DetachAudioStreamProcessor(plug->music[ui->item].stream, callback);
-            ui->item++;
-            if (ui->item >= ui->file_counter) ui->item = 0;
+            if (loop_enabled) {
+                SeekMusicStream(plug->music[ui->item], 0.0f);
+            } else {
+                ui->item++;
+                if (ui->item >= ui->file_counter) ui->item = 0;
+            }
             ui->requested = false;
         }
 
@@ -399,6 +407,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
                 float max_slider_width = GetScreenWidth() * 0.2f; 
                 float slider_width = fminf(250.0f, max_slider_width);
                 float volume_x = GetScreenWidth() - slider_width - 20.0f;
+                vol_x = volume_x;
                 float volume_w = 250.0f;
                 float time_x = 20.0f;
                 float time_w = 800.0f;
@@ -561,7 +570,14 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
             ui->requested = false;                
 
         }
-    
+
+        ctx->cursor_x = vol_x + (button_size / 2.0f) - 80.0f;
+        ctx->cursor_y = GetScreenHeight() - button_size - post_y;
+        
+        if (qui_image_button(ctx, &loop_image, button_size, button_size, image_size, image_size)) {
+            loop_enabled = !loop_enabled;
+        }
+
     }
 
     if(ui->file_counter > 0) {
