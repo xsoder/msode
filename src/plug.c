@@ -23,8 +23,7 @@ static int panel_height = 100;
 static float skip_rate = 5.0f;
 static float hue;
 static Config config = {0};
-static bool loop_enabled = false;
-static float vol_x = 0.0f;
+static int loop_enabled = 0;
 #define CONFIG_PATH "msode.conf"
 
 
@@ -337,8 +336,6 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
     qui_Image next_image  = { &ui->next_texture, ui->next_texture.width,  ui->next_texture.height,  4 };
     qui_Image previous_image  = { &ui->previous_texture, ui->previous_texture.width,  ui->previous_texture.height,  4 };
     
-    qui_Image loop_image  = { &ui->loop_texture, ui->loop_texture.width,  ui->loop_texture.height,  4 };
-
     Vector2 mouse_pos = GetMousePosition();
     qui_mouse_move(ctx, (int)mouse_pos.x, (int)mouse_pos.y);
     
@@ -407,7 +404,6 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
                 float max_slider_width = GetScreenWidth() * 0.2f; 
                 float slider_width = fminf(250.0f, max_slider_width);
                 float volume_x = GetScreenWidth() - slider_width - 20.0f;
-                vol_x = volume_x;
                 float volume_w = 250.0f;
                 float time_x = 20.0f;
                 float time_w = 800.0f;
@@ -443,6 +439,11 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
                 };
 
                 qui_slider_ex(ctx, "Vol", &volume, 0.0f, 1.0f, 150.0f, &volume_style, false);
+                
+                ctx->cursor_x = volume_x - volume_x/15;
+                ctx->cursor_y = slider_y + 14;
+
+                qui_checkbox(ctx, "loop", &loop_enabled);
                 Vector2 time_pos = {(int)(time_x + 5), (int)(slider_y + 8) };
                 DrawTextEx(ui->font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
                 
@@ -569,13 +570,6 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
             if (ui->item >= ui->file_counter) ui->item = 0;
             ui->requested = false;                
 
-        }
-
-        ctx->cursor_x = vol_x + (button_size / 2.0f) - 80.0f;
-        ctx->cursor_y = GetScreenHeight() - button_size - post_y;
-        
-        if (qui_image_button(ctx, &loop_image, button_size, button_size, image_size, image_size)) {
-            loop_enabled = !loop_enabled;
         }
 
     }
