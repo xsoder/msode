@@ -23,7 +23,6 @@ static int panel_height = 100;
 static float skip_rate = 5.0f;
 static float hue;
 static Config config = {0};
-static int loop_enabled = 0;
 #define CONFIG_PATH "msode.conf"
 
 
@@ -335,7 +334,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
 
     qui_Image next_image  = { &ui->next_texture, ui->next_texture.width,  ui->next_texture.height,  4 };
     qui_Image previous_image  = { &ui->previous_texture, ui->previous_texture.width,  ui->previous_texture.height,  4 };
-    
+
     Vector2 mouse_pos = GetMousePosition();
     qui_mouse_move(ctx, (int)mouse_pos.x, (int)mouse_pos.y);
     
@@ -382,16 +381,12 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
     
     if (ui->file_counter > 0) {
         float elapsed = GetMusicTimePlayed(plug->music[ui->item]);            
-        float length = GetMusicTimeLength(plug->music[ui->item]);
+        float length = GetMusicTimeLength(plug->music[ui->item]); 
         
         if (elapsed >= length) {
             DetachAudioStreamProcessor(plug->music[ui->item].stream, callback);
-            if (loop_enabled) {
-                SeekMusicStream(plug->music[ui->item], 0.0f);
-            } else {
-                ui->item++;
-                if (ui->item >= ui->file_counter) ui->item = 0;
-            }
+            ui->item++;
+            if (ui->item >= ui->file_counter) ui->item = 0;
             ui->requested = false;
         }
 
@@ -439,11 +434,6 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
                 };
 
                 qui_slider_ex(ctx, "Vol", &volume, 0.0f, 1.0f, 150.0f, &volume_style, false);
-                
-                ctx->cursor_x = volume_x - volume_x/15;
-                ctx->cursor_y = slider_y + 14;
-
-                qui_checkbox(ctx, "loop", &loop_enabled);
                 Vector2 time_pos = {(int)(time_x + 5), (int)(slider_y + 8) };
                 DrawTextEx(ui->font,"Time", time_pos , txt_font_size, txt_font_space, text_color);
                 
@@ -571,7 +561,7 @@ void plug_update_imp(Plug *plug, Ui *ui, qui_Context *ctx)
             ui->requested = false;                
 
         }
-
+    
     }
 
     if(ui->file_counter > 0) {
