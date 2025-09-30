@@ -22,59 +22,12 @@ typedef struct {
 Plug plug = {0};
 Ui ui = {0};
 qui_Context ctx = {0};
-static bool window_minimized = false;
-static pid_t tray_pid = 0;
-
-void toggle_window(int sig) {
-    if (sig == SIGUSR1) {
-        window_minimized = !window_minimized;
-        if (window_minimized) {
-            SetWindowSize(1, 1);
-            SetWindowPosition(-1000, -1000);
-        } else {
-            SetWindowSize(1400, 900);
-            SetWindowPosition(100, 100);
-        }
-    } else if (sig == SIGUSR2) {
-        exit(0);
-    }
-}
-
-void setup_tray_icon() {
-    tray_pid = fork();
-    if (tray_pid == 0) {
-        char menu_cmd[512];
-        snprintf(menu_cmd, sizeof(menu_cmd), 
-                "Show/Hide!view-restore!kill -USR1 %d|Quit!application-exit!kill -USR2 %d", 
-                getppid(), getppid());
-        
-        execlp("yad", "yad",
-               "--notification",
-               "--image=resources/penger.png",
-               "--text=Msode Music Player",
-               "--menu", menu_cmd,
-               "--no-middle",
-               NULL);
-        exit(1); // If execlp fails
-    }
-}
-
-void cleanup_tray() {
-    if (tray_pid > 0) {
-        kill(tray_pid, SIGTERM);
-    }
-}
 
 int main(int argc, char *argv[])
 {
     ui.file_counter = 0;
     ui.item = 0;
     ui.requested = false;
-    
-    signal(SIGUSR1, toggle_window);
-    signal(SIGUSR2, toggle_window);
-    signal(SIGTERM, cleanup_tray);
-    signal(SIGINT, cleanup_tray);
     
     if (!reload_libplug()) return 1;
     Win win = {0};
@@ -87,8 +40,6 @@ int main(int argc, char *argv[])
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     
     InitWindow(win.width, win.height, win.title);
-    
-    setup_tray_icon();
     
     ui.font = LoadFontEx("resources/InterVariable.ttf", 48, 0, 0); 
     if (ui.font.texture.id == 0) {
@@ -129,7 +80,6 @@ int main(int argc, char *argv[])
     }
     
     while (!WindowShouldClose()) {
-        if (!window_minimized) {
             BeginDrawing();
             ClearBackground(BG_COLOR);
             plug_init(&plug, &ui, &ctx);
@@ -152,15 +102,8 @@ int main(int argc, char *argv[])
             }
             plug_update(&plug, &ui, &ctx);
             EndDrawing();
-        } else {
-            plug_init(&plug, &ui, &ctx);
-            plug_update(&plug, &ui, &ctx);
-            usleep(16666); // ~60 FPS equivalent
-        }
     }
     
-    // Cleanup
-    cleanup_tray();
     
     for (int i = 0; i < ui.file_counter; i++) {
         if (plug.music[i].stream.buffer != NULL) {
